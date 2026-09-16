@@ -1,0 +1,16 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.2, pytest-9.1.1, pluggy-1.6.0
+rootdir: C:\Users\evinl\Downloads\PROJECTS\de-pipeline
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 0 items / 1 error
+
+=================================== ERRORS ====================================
+____________________ ERROR collecting samples/test_fail.py ____________________
+samples\test_fail.py:1: in <module>
+    assert 1 + 1 == 3
+E   assert (1 + 1) == 3
+=========================== short test summary info ===========================
+ERROR samples/test_fail.py - assert (1 + 1) == 3
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+============================== 1 error in 0.15s ===============================
