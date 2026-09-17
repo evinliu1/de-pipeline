@@ -36,6 +36,7 @@ MAX_ATTEMPTS = 3
 MAX_WAIT_SECONDS = 30
 RETRIABLE_STATUSES = [429, 500, 502, 503, 504]
 
+
 class DePipelineError(Exception):
     """Base class for expected errors with a message safe to show users."""
 
@@ -104,22 +105,24 @@ def reply_message(res: httpx.Response) -> str:
     try:
         content = res.json()["choices"][0]["message"]["content"]
     except (ValueError, KeyError, IndexError, TypeError) as e:
-        raise ModelError(f"unexpected response from model provider ({type(e).__name__})") from e
+        raise ModelError(
+            f"unexpected response from model provider ({type(e).__name__})"
+        ) from e
     if not isinstance(content, str) or not content.strip():
         raise ModelError("model returned empty reply")
     return content
 
 
 def get_wait(res: httpx.Response | None, attempt: int) -> int:
-    backoff = 2 * 2 ** attempt
+    backoff = 2 * 2**attempt
     if res is None:
-        return backoff
+        return min(backoff, MAX_WAIT_SECONDS)
     try:
         wait = int(res.headers.get("Retry-After", backoff))
     except ValueError:
         wait = backoff
     return min(wait, MAX_WAIT_SECONDS)
-    
+
 
 def send_req(api_key: str, req_body: dict[str, Any]) -> str:
     headers = {"Authorization": f"Bearer {api_key}"}
@@ -135,15 +138,21 @@ def send_req(api_key: str, req_body: dict[str, Any]) -> str:
             if res.is_success:
                 return reply_message(res)
             if res.status_code not in RETRIABLE_STATUSES:
-                raise ModelError(f"model request failed ({res.status_code}): {error_message(res)}")
+                raise ModelError(
+                    f"model request failed ({res.status_code}): {error_message(res)}"
+                )
             last_error = f"{res.status_code}: {error_message(res)}"
             wait = get_wait(res, attempt)
-        
+
         if attempt < MAX_ATTEMPTS - 1:
-            print(f"model request failed due to ({last_error}), retrying in {wait} seconds", file=sys.stderr)
+            print(
+                f"model request failed due to ({last_error}), retrying in {wait} seconds",
+                file=sys.stderr,
+            )
             time.sleep(wait)
-    
+
     raise ModelError(f"Gave up after {MAX_ATTEMPTS} attempts: {last_error}")
+
 
 def main() -> None:
     load_dotenv()
@@ -158,6 +167,7 @@ def main() -> None:
         sys.exit(f"error: {e!s}")
 
     print(response)
+
 
 if __name__ == "__main__":
     main()
