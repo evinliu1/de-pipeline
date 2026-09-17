@@ -114,7 +114,7 @@ def reply_message(res: httpx.Response) -> str:
 
 
 def get_wait(res: httpx.Response | None, attempt: int) -> int:
-    backoff = 3 * 2**attempt
+    backoff = 2 * 2**attempt
     if res is None:
         return min(backoff, MAX_WAIT_SECONDS)
     try:
