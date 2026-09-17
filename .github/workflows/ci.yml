@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  content: read
+  contents: read
 
 jobs:
   test:
@@ -19,6 +19,7 @@ jobs:
         run: uv sync
       
       - name: Run tests
+        shell: bash
         run: uv run pytest 2>&1 | tee test.log
       
       - name: Explain the failure
