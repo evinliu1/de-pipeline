@@ -145,8 +145,6 @@ def send_req(api_key: str, req_body: dict[str, Any]) -> str:
     
     raise ModelError(f"Gave up after {MAX_ATTEMPTS} attempts: {last_error}")
 
-    
-
 def main() -> None:
     load_dotenv()
     try:
