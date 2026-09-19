@@ -1,11 +1,9 @@
 ============================= test session starts =============================
-platform win32 -- Python 3.13.2, pytest-9.1.1, pluggy-1.6.0
+platform win32 -- Python 3.13.2, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\evinl\Downloads\PROJECTS\de-pipeline\.venv\Scripts\python.exe
+cachedir: .pytest_cache
 rootdir: C:\Users\evinl\Downloads\PROJECTS\de-pipeline
 configfile: pyproject.toml
-testpaths: tests
 plugins: anyio-4.15.1
-collected 11 items
+collecting ... collected 0 items
 
-tests\test_explain.py ...........                                        [100%]
-
-============================= 11 passed in 0.13s ==============================
+============================ no tests ran in 0.02s ============================
