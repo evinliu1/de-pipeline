@@ -4,7 +4,16 @@ import httpx
 import pytest
 
 from de_pipeline import explain
-from de_pipeline.explain import MAX_ATTEMPTS, ModelError, UsageError, get_file_path, get_wait
+from de_pipeline.explain import (
+    RESPONSE_FORMAT_SCHEMA,
+    MAX_ATTEMPTS,
+    ModelError,
+    UsageError,
+    get_file_path,
+    get_wait,
+    strip_json_fences
+)
+from de_pipeline.schema import Diagnosis
 
 
 def test_get_file_path_returns_the_argument() -> None:
@@ -58,6 +67,7 @@ def test_send_req_attempts_3_times_then_fails(monkeypatch: pytest.MonkeyPatch) -
     assert not replies
     assert sleeps == [2, 4]
 
+
 def test_get_wait_returns_backoff_if_header_is_date() -> None:
     headers = [
         httpx.Response(429, headers={"Retry-After": "Nov 17 2026 16:22"}),
@@ -65,11 +75,30 @@ def test_get_wait_returns_backoff_if_header_is_date() -> None:
         httpx.Response(429, headers={"Retry-After": "Nov 19 2026 16:22"}),
     ]
     backoffs = [2, 4, 8]
-    
+
     for attempt in range(MAX_ATTEMPTS):
         assert get_wait(headers[attempt], attempt) == backoffs[attempt]
+
 
 def test_get_wait_caps_at_max_wait() -> None:
     headers = httpx.Response(429, headers={"Retry-After": "350"})
     assert get_wait(headers, 1) == 30
     assert get_wait(None, 10) == 30
+
+def test_schema_matches_the_model() -> None:
+    properties = RESPONSE_FORMAT_SCHEMA["json_schema"]["schema"]["properties"]
+    assert set(properties) == set(Diagnosis.model_fields)
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "{'hello': 'world'}",
+        "```json\n{'hello': 'world'}\n```",
+        "```\n{'hello': 'world'}\n```",
+        "  {'hello': 'world'}  ",
+    ],
+)
+def test_strip_json_fences(text: str) -> None:
+    assert strip_json_fences(text) == "{'hello': 'world'}"
+
+
