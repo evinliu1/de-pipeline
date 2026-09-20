@@ -10,8 +10,22 @@ import pydantic
 from dotenv import load_dotenv
 
 from de_pipeline.schema import Diagnosis
+from de_pipeline.errors import (
+    DePipelineError,
+    UsageError,
+    LogFileError,
+    ModelError,
+    DiagnosisError
+)
+from de_pipeline.config import get_env
+from de_pipeline.config import (
+    GEMINI_URL,
+    MAX_ATTEMPTS,
+    MAX_WAIT_SECONDS,
+    RETRIABLE_STATUSES
+)
 
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+
 USAGE = "usage: python -m de_pipeline.explain <log-file>"
 SYSTEM_PROMPT = """
 You're a software engineer who diagnoses failed CI runs.
@@ -30,9 +44,6 @@ or error messages.
 
 Reply with a single JSON object and nothing else.
 """
-MAX_ATTEMPTS = 3
-MAX_WAIT_SECONDS = 30
-RETRIABLE_STATUSES = [429, 500, 502, 503, 504]
 EVIDENCE_SCHEMA = {
     "type": "array",
     "items": {
@@ -83,39 +94,6 @@ RESPONSE_FORMAT_SCHEMA = {
         },
     },
 }
-
-
-class DePipelineError(Exception):
-    """Base class for expected errors with a message safe to show users."""
-
-
-class UsageError(DePipelineError):
-    """The command was run with the wrong arguments"""
-
-
-class EnvError(DePipelineError):
-    """The env var could not be found"""
-
-
-class LogFileError(DePipelineError):
-    """Error reading file contents"""
-
-
-class ModelError(DePipelineError):
-    """Error from calling the model"""
-
-
-class DiagnosisError(DePipelineError):
-    """Error parsing content into Diagnosis class"""
-
-
-def get_env(key_name: str) -> str:
-    val = os.getenv(key_name)
-    if not val:
-        raise EnvError(
-            f"Env var {key_name} is missing or not set. Add to .env or export it"
-        )
-    return val
 
 
 def get_file_path(argv: list[str]) -> Path:

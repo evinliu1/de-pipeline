@@ -3,12 +3,16 @@ from pathlib import Path
 import httpx
 import pytest
 
+from de_pipeline.errors import (
+    ModelError,
+    UsageError,
+)
+from de_pipeline.config import (
+    MAX_ATTEMPTS
+)
 from de_pipeline import explain
 from de_pipeline.explain import (
     RESPONSE_FORMAT_SCHEMA,
-    MAX_ATTEMPTS,
-    ModelError,
-    UsageError,
     get_file_path,
     get_wait,
     strip_json_fences
