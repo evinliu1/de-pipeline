@@ -10,13 +10,13 @@ class Confidence(StrEnum):
 
 
 class Evidence(BaseModel):
-    excerpt: str
+    excerpt: str = Field(min_length=1)
     explanation: str
 
 
 class Diagnosis(BaseModel):
     summary: str = Field(min_length=1)
     root_cause: str = Field(min_length=1)
-    evidence: list[Evidence] = Field(min_length=1)
+    evidence: list[Evidence]
     fix_steps: list[str]
     confidence: Confidence = Field(min_length=1)
