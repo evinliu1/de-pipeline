@@ -4,14 +4,16 @@ import httpx
 import pytest
 
 from de_pipeline import explain
-from de_pipeline.explain import (
-    RESPONSE_FORMAT_SCHEMA,
-    MAX_ATTEMPTS,
+from de_pipeline.config import MAX_ATTEMPTS
+from de_pipeline.errors import (
     ModelError,
     UsageError,
+)
+from de_pipeline.explain import (
+    RESPONSE_FORMAT_SCHEMA,
     get_file_path,
     get_wait,
-    strip_json_fences
+    strip_json_fences,
 )
 from de_pipeline.schema import Diagnosis
 
@@ -85,9 +87,11 @@ def test_get_wait_caps_at_max_wait() -> None:
     assert get_wait(headers, 1) == 30
     assert get_wait(None, 10) == 30
 
+
 def test_schema_matches_the_model() -> None:
     properties = RESPONSE_FORMAT_SCHEMA["json_schema"]["schema"]["properties"]
     assert set(properties) == set(Diagnosis.model_fields)
+
 
 @pytest.mark.parametrize(
     "text",
@@ -100,5 +104,3 @@ def test_schema_matches_the_model() -> None:
 )
 def test_strip_json_fences(text: str) -> None:
     assert strip_json_fences(text) == "{'hello': 'world'}"
-
-
