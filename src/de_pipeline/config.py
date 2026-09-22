@@ -6,7 +6,7 @@ GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/compl
 MAX_ATTEMPTS = 3
 MAX_WAIT_SECONDS = 30
 RETRIABLE_STATUSES = {429, 500, 502, 503, 504}
-MAX_LOG_CHARS = 20_000
+MAX_LOG_CHARS = 2_000
 
 
 def get_env(key_name: str) -> str:

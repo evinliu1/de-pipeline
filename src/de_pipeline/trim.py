@@ -68,7 +68,7 @@ def clean_lines(raw: str) -> list[str]:
     cleaned = []
     for line in raw.splitlines():
         text = strip_colors(strip_timestamps(line)).rstrip()
-        if not line.strip() or is_noise(text):
+        if not text or is_noise(text):
             continue
         cleaned.append(text)
     return cleaned
@@ -88,13 +88,52 @@ def extract(raw: str, max_chars: int) -> str:
         return "(no log output)"
     scores = [score_line(line) for line in lines]
     windows = merge(build_windows(scores))
+    windows = fit_budget(lines, windows, max_chars)
     return render_windows(lines, windows)
 
+def fit_budget(lines: list[str], windows: list[Window], max_chars: int) -> list[Window]:
+    budgeted_windows = []
+    total_chars = 0
+    windows = sorted(windows, key=lambda window: window.score, reverse=True)
+    for window in windows:
+        size = sum(1 + len(line) for line in lines[window.start:window.end])
+        while size > max_chars:
+            window.start += 1
+            size = sum(1 + len(line) for line in lines[window.start:window.end])
+        if total_chars + size <= max_chars:
+            budgeted_windows.append(window)
+            total_chars += size
+
+    budgeted_windows = sorted(budgeted_windows, key=lambda window: window.start)
+    return budgeted_windows
+
 def merge(windows: list[Window]) -> list[Window]:
-    pass
+    windows = sorted(windows, key=lambda window: window.start)
+    merged = []
+    for window in windows:
+        start = window.start
+        end = window.end
+        score = window.score
+        if merged and start <= merged[-1].end:
+            merged[-1].end = max(merged[-1].end,end)
+            merged[-1].score = score + merged[-1].score
+        else:
+            merged.append(Window(start, end, score))
+    return merged
 
 def render_windows(lines: list[str], windows: list[Window]) -> str:
-    pass
+    parts = []
+    position = 0
+    for window in windows:
+        if window.start > position:
+            omitted = window.start - position
+            parts.append(f"... [{omitted} lines omitted] ...")
+        parts.extend(lines[window.start:window.end])
+        position = window.end
+    if position < len(lines):
+        omitted = len(lines) - position
+        parts.append(f"... [{omitted} lines omitted] ...")
+    return "\n".join(parts)
 
 def build_windows(scores: list[int]) -> list[Window]:
     total = len(scores)
@@ -109,11 +148,9 @@ def build_windows(scores: list[int]) -> list[Window]:
 def main() -> None:
     file_path = get_file_path(sys.argv)
     file_contents = get_file_contents(file_path)
-    cleaned_lines = clean_lines(file_contents)
-    for line in cleaned_lines:
-        score = score_line(line)
-        if score:
-            print(score, line)
+    rendered = extract(file_contents, MAX_LOG_CHARS)
+    print(rendered)
+    
 
 
 if __name__ == "__main__":

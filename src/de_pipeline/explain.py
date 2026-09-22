@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 from de_pipeline.config import (
     GEMINI_URL,
     MAX_ATTEMPTS,
+    MAX_LOG_CHARS,
     MAX_WAIT_SECONDS,
     RETRIABLE_STATUSES,
     get_env,
@@ -17,6 +18,7 @@ from de_pipeline.config import (
 from de_pipeline.errors import DePipelineError, DiagnosisError, LogFileError, ModelError
 from de_pipeline.files import get_file_contents, get_file_path
 from de_pipeline.schema import Diagnosis
+from de_pipeline.trim import extract
 
 SYSTEM_PROMPT = """
 You're a software engineer who diagnoses failed CI runs.
@@ -222,7 +224,7 @@ def render(diagnosis: Diagnosis) -> str:
         f"{number}. {step}" for number, step in enumerate(diagnosis.fix_steps, start=1)
     )
     evidence = "\n\n".join(
-        f"excerpt: {e.excerpt}\nexplanation: {e.explanation}"
+        f"excerpt:\n{e.excerpt}\nexplanation: {e.explanation}"
         for e in diagnosis.evidence
     )
 
@@ -239,7 +241,8 @@ def main() -> None:
             raise LogFileError("empty log file")
         api_key = get_env("GEMINI_API_KEY")
         model_name = get_env("DE_PIPELINE_MODEL")
-        response = diagnose(api_key, model_name, file_contents)
+        trimmed = extract(file_contents, MAX_LOG_CHARS)
+        response = diagnose(api_key, model_name, trimmed)
     except DePipelineError as e:
         sys.exit(f"error: {e!s}")
 
