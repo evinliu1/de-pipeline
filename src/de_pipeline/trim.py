@@ -96,16 +96,16 @@ def fit_budget(lines: list[str], windows: list[Window], max_chars: int) -> list[
     total_chars = 0
     windows = sorted(windows, key=lambda window: window.score, reverse=True)
     for window in windows:
+        start = window.start
         size = sum(1 + len(line) for line in lines[window.start:window.end])
         while size > max_chars:
-            window.start += 1
-            size = sum(1 + len(line) for line in lines[window.start:window.end])
+            size -= len(lines[start]) + 1
+            start += 1
         if total_chars + size <= max_chars:
             budgeted_windows.append(window)
             total_chars += size
 
-    budgeted_windows = sorted(budgeted_windows, key=lambda window: window.start)
-    return budgeted_windows
+    return sorted(budgeted_windows, key=lambda window: window.start)
 
 def merge(windows: list[Window]) -> list[Window]:
     windows = sorted(windows, key=lambda window: window.start)
