@@ -15,6 +15,8 @@ from de_pipeline.trim import (
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
+LINES = [f"line {i}" for i in range(10)]
+
 
 def omitted(count: int) -> str:
     return f"... [{count} lines omitted] ..."
@@ -138,9 +140,6 @@ def test_fit_budget_keeps_the_end_of_an_oversized_window() -> None:
     lines = ["x" * 99] * 100
 
     assert fit_budget(lines, [Window(0, 100, 1.0)], 1_000) == [Window(90, 100, 1.0)]
-
-
-LINES = [f"line {i}" for i in range(10)]
 
 
 def test_render_windows_marks_every_gap() -> None:

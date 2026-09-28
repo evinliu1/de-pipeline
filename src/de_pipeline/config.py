@@ -7,7 +7,9 @@ MAX_ATTEMPTS = 3
 MAX_WAIT_SECONDS = 30
 RETRIABLE_STATUSES = {429, 500, 502, 503, 504}
 MAX_LOG_CHARS = 20_000
-
+GITHUB_API = "https://api.github.com"
+GITHUB_API_VERSION = "2022-11-28"
+MAX_DIFF_CHARS = 12_000
 
 def get_env(key_name: str) -> str:
     val = os.getenv(key_name)

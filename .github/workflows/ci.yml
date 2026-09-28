@@ -17,15 +17,15 @@ jobs:
 
       - name: Install dependencies
         run: uv sync
-      
+
       - name: Run tests
         shell: bash
         run: uv run pytest 2>&1 | tee test.log
-      
+
       - name: Explain the failure
         if: failure()
         shell: bash
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DE_PIPELINE_MODEL: ${{ vars.DE_PIPELINE_MODEL }}
-        run: uv run python -m de_pipeline.explain test.log | tee -a "$GITHUB_STEP_SUMMARY"
+        run: uv run python -m de_pipeline.explain --log test.log | tee -a "$GITHUB_STEP_SUMMARY"
