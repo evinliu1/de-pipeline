@@ -102,7 +102,7 @@ def fit_budget(lines: list[str], windows: list[Window], max_chars: int) -> list[
             size -= len(lines[start]) + 1
             start += 1
         if total_chars + size <= max_chars:
-            budgeted_windows.append(window)
+            budgeted_windows.append(Window(start, window.end, window.score))
             total_chars += size
 
     return sorted(budgeted_windows, key=lambda window: window.start)
