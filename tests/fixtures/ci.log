@@ -1,0 +1,349 @@
+﻿2026-09-17T17:04:39.9764924Z Current runner version: '2.337.0'
+2026-09-17T17:04:39.9792396Z ##[group]Runner Image Provisioner
+2026-09-17T17:04:39.9793383Z Hosted Compute Agent
+2026-09-17T17:04:39.9794094Z Version: 20260828.587
+2026-09-17T17:04:39.9794816Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-17T17:04:39.9795611Z Build Date: 2026-08-28T16:44:25Z
+2026-09-17T17:04:39.9796326Z Worker ID: {a3926d42-15f2-4d19-b4f6-6100cfe412a8}
+2026-09-17T17:04:39.9797152Z Azure Region: eastus
+2026-09-17T17:04:39.9798006Z ##[endgroup]
+2026-09-17T17:04:39.9800310Z ##[group]Operating System
+2026-09-17T17:04:39.9801006Z Ubuntu
+2026-09-17T17:04:39.9801616Z 24.04.5
+2026-09-17T17:04:39.9802207Z LTS
+2026-09-17T17:04:39.9802753Z ##[endgroup]
+2026-09-17T17:04:39.9803387Z ##[group]Runner Image
+2026-09-17T17:04:39.9804057Z Image: ubuntu-24.04
+2026-09-17T17:04:39.9804680Z Version: 20260907.300.1
+2026-09-17T17:04:39.9806048Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
+2026-09-17T17:04:39.9808165Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
+2026-09-17T17:04:39.9809227Z ##[endgroup]
+2026-09-17T17:04:39.9810687Z ##[group]GITHUB_TOKEN Permissions
+2026-09-17T17:04:39.9813107Z Contents: read
+2026-09-17T17:04:39.9813879Z Metadata: read
+2026-09-17T17:04:39.9814494Z ##[endgroup]
+2026-09-17T17:04:39.9816707Z Secret source: Actions
+2026-09-17T17:04:39.9818212Z Cache mode: write
+2026-09-17T17:04:39.9819231Z Prepare workflow directory
+2026-09-17T17:04:40.0164212Z Prepare all required actions
+2026-09-17T17:04:40.0214536Z Getting action download info
+2026-09-17T17:04:40.2530183Z Download action repository 'actions/checkout@v5' (SHA:fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09)
+2026-09-17T17:04:40.3911744Z Download action repository 'astral-sh/setup-uv@v9.0.0' (SHA:c771a70e6277c0a99b617c7a806ffedaca235ff9)
+2026-09-17T17:04:40.7041410Z Complete job name: unit-tests
+2026-09-17T17:04:40.7863323Z ##[group]Run actions/checkout@v5
+2026-09-17T17:04:40.7864282Z with:
+2026-09-17T17:04:40.7864781Z   repository: evinliu1/de-pipeline
+2026-09-17T17:04:40.7869328Z   token: ***
+2026-09-17T17:04:40.7869812Z   ssh-strict: true
+2026-09-17T17:04:40.7870278Z   ssh-user: git
+2026-09-17T17:04:40.7870750Z   persist-credentials: true
+2026-09-17T17:04:40.7871255Z   clean: true
+2026-09-17T17:04:40.7871727Z   sparse-checkout-cone-mode: true
+2026-09-17T17:04:40.7872277Z   fetch-depth: 1
+2026-09-17T17:04:40.7872734Z   fetch-tags: false
+2026-09-17T17:04:40.7873201Z   show-progress: true
+2026-09-17T17:04:40.7873678Z   lfs: false
+2026-09-17T17:04:40.7874111Z   submodules: false
+2026-09-17T17:04:40.7874589Z   set-safe-directory: true
+2026-09-17T17:04:40.7875123Z   allow-unsafe-pr-checkout: false
+2026-09-17T17:04:40.7875961Z ##[endgroup]
+2026-09-17T17:04:40.8955478Z Syncing repository: evinliu1/de-pipeline
+2026-09-17T17:04:40.8958509Z ##[group]Getting Git version info
+2026-09-17T17:04:40.8960005Z Working directory is '/home/runner/work/de-pipeline/de-pipeline'
+2026-09-17T17:04:40.8961941Z [command]/usr/bin/git version
+2026-09-17T17:04:40.9005877Z git version 2.55.0
+2026-09-17T17:04:40.9039215Z ##[endgroup]
+2026-09-17T17:04:40.9047595Z Temporarily overriding HOME='/home/runner/work/_temp/70e29371-d9a1-4c13-b995-d748018cb218' before making global git config changes
+2026-09-17T17:04:40.9049907Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-17T17:04:40.9054142Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/de-pipeline/de-pipeline
+2026-09-17T17:04:40.9115413Z Deleting the contents of '/home/runner/work/de-pipeline/de-pipeline'
+2026-09-17T17:04:40.9121599Z ##[group]Initializing the repository
+2026-09-17T17:04:40.9126694Z [command]/usr/bin/git init /home/runner/work/de-pipeline/de-pipeline
+2026-09-17T17:04:40.9271323Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-17T17:04:40.9273942Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-17T17:04:40.9277203Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-17T17:04:40.9278753Z hint: call:
+2026-09-17T17:04:40.9279520Z hint:
+2026-09-17T17:04:40.9280116Z hint: 	git config --global init.defaultBranch <name>
+2026-09-17T17:04:40.9280773Z hint:
+2026-09-17T17:04:40.9281542Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-17T17:04:40.9282664Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-17T17:04:40.9283764Z hint:
+2026-09-17T17:04:40.9284487Z hint: 	git branch -m <name>
+2026-09-17T17:04:40.9285120Z hint:
+2026-09-17T17:04:40.9285799Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-17T17:04:40.9286869Z Initialized empty Git repository in /home/runner/work/de-pipeline/de-pipeline/.git/
+2026-09-17T17:04:40.9289145Z [command]/usr/bin/git remote add origin https://github.com/evinliu1/de-pipeline
+2026-09-17T17:04:40.9336344Z ##[endgroup]
+2026-09-17T17:04:40.9337204Z ##[group]Disabling automatic garbage collection
+2026-09-17T17:04:40.9342513Z [command]/usr/bin/git config --local gc.auto 0
+2026-09-17T17:04:40.9376144Z ##[endgroup]
+2026-09-17T17:04:40.9386369Z ##[group]Setting up auth
+2026-09-17T17:04:40.9388468Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T17:04:40.9435113Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T17:04:40.9831565Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T17:04:40.9883837Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T17:04:41.0143170Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T17:04:41.0200104Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T17:04:41.0467681Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-17T17:04:41.0519771Z ##[endgroup]
+2026-09-17T17:04:41.0521533Z ##[group]Fetching the repository
+2026-09-17T17:04:41.0531830Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +9c3cb7695c086749683f4f0d9554736f5f6f13cf:refs/remotes/pull/11/merge
+2026-09-17T17:04:41.3791188Z From https://github.com/evinliu1/de-pipeline
+2026-09-17T17:04:41.3793913Z  * [new ref]         9c3cb7695c086749683f4f0d9554736f5f6f13cf -> pull/11/merge
+2026-09-17T17:04:41.3799062Z ##[endgroup]
+2026-09-17T17:04:41.3801622Z ##[group]Determining the checkout info
+2026-09-17T17:04:41.3804628Z ##[endgroup]
+2026-09-17T17:04:41.3806266Z [command]/usr/bin/git sparse-checkout disable
+2026-09-17T17:04:41.3865108Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-17T17:04:41.3930200Z ##[group]Checking out the ref
+2026-09-17T17:04:41.3932722Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/11/merge
+2026-09-17T17:04:41.3995607Z Note: switching to 'refs/remotes/pull/11/merge'.
+2026-09-17T17:04:41.3996796Z 
+2026-09-17T17:04:41.3997996Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-09-17T17:04:41.4000392Z changes and commit them, and you can discard any commits you make in this
+2026-09-17T17:04:41.4002477Z state without impacting any branches by switching back to a branch.
+2026-09-17T17:04:41.4003409Z 
+2026-09-17T17:04:41.4004490Z If you want to create a new branch to retain commits you create, you may
+2026-09-17T17:04:41.4006061Z do so (now or later) by using -c with the switch command. Example:
+2026-09-17T17:04:41.4006819Z 
+2026-09-17T17:04:41.4007180Z   git switch -c <new-branch-name>
+2026-09-17T17:04:41.4008132Z 
+2026-09-17T17:04:41.4008795Z Or undo this operation with:
+2026-09-17T17:04:41.4009297Z 
+2026-09-17T17:04:41.4009626Z   git switch -
+2026-09-17T17:04:41.4010002Z 
+2026-09-17T17:04:41.4010710Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-09-17T17:04:41.4011718Z 
+2026-09-17T17:04:41.4012834Z HEAD is now at 9c3cb76 Merge bc1b6ba9a34a2b3ab2d5320be416ab66384bba80 into 44b670bee8f9d5348969204ec209827b7f4c23fa
+2026-09-17T17:04:41.4016344Z ##[endgroup]
+2026-09-17T17:04:41.4056220Z [command]/usr/bin/git log -1 --format=%H
+2026-09-17T17:04:41.4084515Z 9c3cb7695c086749683f4f0d9554736f5f6f13cf
+2026-09-17T17:04:41.4613433Z ##[group]Run astral-sh/setup-uv@v9.0.0
+2026-09-17T17:04:41.4614358Z with:
+2026-09-17T17:04:41.4614916Z   activate-environment: false
+2026-09-17T17:04:41.4615645Z   no-project: false
+2026-09-17T17:04:41.4616522Z   working-directory: /home/runner/work/de-pipeline/de-pipeline
+2026-09-17T17:04:41.4627810Z   github-token: ***
+2026-09-17T17:04:41.4628446Z   enable-cache: auto
+2026-09-17T17:04:41.4630469Z   cache-dependency-glob: **/*requirements*.txt
+**/*requirements*.in
+**/*constraints*.txt
+**/*constraints*.in
+**/pyproject.toml
+**/uv.lock
+**/*.py.lock
+
+2026-09-17T17:04:41.4632654Z   restore-cache: true
+2026-09-17T17:04:41.4633264Z   save-cache: true
+2026-09-17T17:04:41.4633831Z   prune-cache: false
+2026-09-17T17:04:41.4634442Z   cache-python: false
+2026-09-17T17:04:41.4635100Z   ignore-nothing-to-cache: false
+2026-09-17T17:04:41.4635895Z   ignore-empty-workdir: false
+2026-09-17T17:04:41.4636663Z   download-from-astral-mirror: true
+2026-09-17T17:04:41.4637811Z   add-problem-matchers: true
+2026-09-17T17:04:41.4638527Z   quiet: false
+2026-09-17T17:04:41.4639098Z   resolution-strategy: highest
+2026-09-17T17:04:41.4639803Z ##[endgroup]
+2026-09-17T17:04:41.6505939Z Trying to find version for uv in: /home/runner/work/de-pipeline/de-pipeline/uv.toml
+2026-09-17T17:04:41.6509413Z Could not find file: /home/runner/work/de-pipeline/de-pipeline/uv.toml
+2026-09-17T17:04:41.6511960Z Trying to find version for uv in: /home/runner/work/de-pipeline/de-pipeline/pyproject.toml
+2026-09-17T17:04:41.6515042Z Could not determine uv version from uv.toml or pyproject.toml. Falling back to latest.
+2026-09-17T17:04:41.6519902Z Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+2026-09-17T17:04:41.7061908Z Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.12.15/uv-x86_64-unknown-linux-gnu.tar.gz" ...
+2026-09-17T17:04:41.8728741Z [command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/ac099631-1bf7-4b64-98a7-97bbed6f0925 -f /home/runner/work/_temp/077b1dca-f15c-4a01-931f-36da27fd2664
+2026-09-17T17:04:42.2665466Z Added /home/runner/.local/bin to the path
+2026-09-17T17:04:42.2669288Z Added /opt/hostedtoolcache/uv/0.12.15/x86_64 to the path
+2026-09-17T17:04:42.2671547Z Set UV_PYTHON_INSTALL_DIR to /home/runner/work/_temp/uv-python-dir
+2026-09-17T17:04:42.2673845Z Added /home/runner/work/_temp/uv-python-dir to the path
+2026-09-17T17:04:42.2699283Z Set UV_CACHE_DIR to /home/runner/work/_temp/setup-uv-cache
+2026-09-17T17:04:42.2700427Z Successfully installed uv version 0.12.15
+2026-09-17T17:04:42.3694478Z Searching files using cache dependency glob: /home/runner/work/de-pipeline/de-pipeline/**/*requirements*.txt,/home/runner/work/de-pipeline/de-pipeline/**/*requirements*.in,/home/runner/work/de-pipeline/de-pipeline/**/*constraints*.txt,/home/runner/work/de-pipeline/de-pipeline/**/*constraints*.in,/home/runner/work/de-pipeline/de-pipeline/**/pyproject.toml,/home/runner/work/de-pipeline/de-pipeline/**/uv.lock,/home/runner/work/de-pipeline/de-pipeline/**/*.py.lock
+2026-09-17T17:04:42.3925909Z /home/runner/work/de-pipeline/de-pipeline/pyproject.toml
+2026-09-17T17:04:42.3964855Z /home/runner/work/de-pipeline/de-pipeline/uv.lock
+2026-09-17T17:04:42.3973806Z Found 2 files to hash.
+2026-09-17T17:04:42.4049168Z Trying to restore cache from GitHub Actions cache with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-unknown-48d4c6fa828fd950edf46aa0a37b9d7d96b09c028e434f157c4e0cc088e03e43
+2026-09-17T17:04:42.4560756Z Cache hit for: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-unknown-48d4c6fa828fd950edf46aa0a37b9d7d96b09c028e434f157c4e0cc088e03e43
+2026-09-17T17:04:42.7208137Z Received 27541537 of 27541537 (100.0%), 113.7 MBs/sec
+2026-09-17T17:04:42.7208963Z Cache Size: ~26 MB (27541537 B)
+2026-09-17T17:04:42.7373110Z [command]/usr/bin/tar -xf /home/runner/work/_temp/9ca9e965-d8bd-43e9-a1e1-dfb1aa808f56/cache.tzst -P -C /home/runner/work/de-pipeline/de-pipeline --use-compress-program unzstd
+2026-09-17T17:04:42.9653714Z Cache restored successfully
+2026-09-17T17:04:42.9670694Z cache restored from GitHub Actions cache with key: setup-uv-2-x86_64-unknown-linux-gnu-ubuntu-24.04-unknown-48d4c6fa828fd950edf46aa0a37b9d7d96b09c028e434f157c4e0cc088e03e43
+2026-09-17T17:04:43.0849607Z ##[group]Run uv sync
+2026-09-17T17:04:43.0849966Z [36;1muv sync[0m
+2026-09-17T17:04:43.0893455Z shell: /usr/bin/bash -e {0}
+2026-09-17T17:04:43.0893783Z env:
+2026-09-17T17:04:43.0894106Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-17T17:04:43.0894539Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-17T17:04:43.0894889Z ##[endgroup]
+2026-09-17T17:04:43.2009355Z Downloading cpython-3.13.15-linux-x86_64-gnu (download) (33.2MiB)
+2026-09-17T17:04:44.0498821Z  Downloaded cpython-3.13.15-linux-x86_64-gnu (download)
+2026-09-17T17:04:44.2056295Z Using CPython 3.13.15
+2026-09-17T17:04:44.2057056Z Creating virtual environment at: .venv
+2026-09-17T17:04:44.2076549Z Resolved 21 packages in 0.61ms
+2026-09-17T17:04:44.2094840Z    Building de-pipeline @ file:///home/runner/work/de-pipeline/de-pipeline
+2026-09-17T17:04:44.2104291Z       Built de-pipeline @ file:///home/runner/work/de-pipeline/de-pipeline
+2026-09-17T17:04:44.2133285Z Prepared 1 package in 4ms
+2026-09-17T17:04:44.2507127Z Installed 20 packages in 37ms
+2026-09-17T17:04:44.2508352Z  + anyio==4.15.1
+2026-09-17T17:04:44.2508787Z  + ast-serialize==0.11.2
+2026-09-17T17:04:44.2509283Z  + certifi==2026.7.22
+2026-09-17T17:04:44.2509966Z  + de-pipeline==0.1.0 (from file:///home/runner/work/de-pipeline/de-pipeline)
+2026-09-17T17:04:44.2510727Z  + h11==0.16.0
+2026-09-17T17:04:44.2511127Z  + httpcore==1.0.9
+2026-09-17T17:04:44.2511528Z  + httpx==0.28.1
+2026-09-17T17:04:44.2511956Z  + idna==3.19
+2026-09-17T17:04:44.2512357Z  + iniconfig==2.3.0
+2026-09-17T17:04:44.2512769Z  + librt==0.15.0
+2026-09-17T17:04:44.2513140Z  + mypy==2.3.1
+2026-09-17T17:04:44.2513547Z  + mypy-extensions==1.1.0
+2026-09-17T17:04:44.2514022Z  + packaging==26.3
+2026-09-17T17:04:44.2514423Z  + pathspec==1.1.1
+2026-09-17T17:04:44.2514723Z  + pluggy==1.6.0
+2026-09-17T17:04:44.2514966Z  + pygments==2.21.0
+2026-09-17T17:04:44.2515197Z  + pytest==9.1.1
+2026-09-17T17:04:44.2515437Z  + python-dotenv==1.2.3
+2026-09-17T17:04:44.2515738Z  + ruff==0.16.7
+2026-09-17T17:04:44.2515977Z  + typing-extensions==4.16.0
+2026-09-17T17:04:44.2577742Z ##[group]Run uv run pytest 2>&1 | tee test.log
+2026-09-17T17:04:44.2578177Z [36;1muv run pytest 2>&1 | tee test.log[0m
+2026-09-17T17:04:44.2619464Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-17T17:04:44.2619859Z env:
+2026-09-17T17:04:44.2620174Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-17T17:04:44.2620630Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-17T17:04:44.2620979Z ##[endgroup]
+2026-09-17T17:04:45.5626968Z ============================= test session starts ==============================
+2026-09-17T17:04:45.5628235Z platform linux -- Python 3.13.15, pytest-9.1.1, pluggy-1.6.0
+2026-09-17T17:04:45.5628999Z rootdir: /home/runner/work/de-pipeline/de-pipeline
+2026-09-17T17:04:45.5629841Z configfile: pyproject.toml
+2026-09-17T17:04:45.5630321Z testpaths: tests
+2026-09-17T17:04:45.5630803Z plugins: anyio-4.15.1
+2026-09-17T17:04:45.5631246Z collected 6 items
+2026-09-17T17:04:45.5631504Z 
+2026-09-17T17:04:45.6063848Z tests/test_explain.py ...FF.                                             [100%]
+2026-09-17T17:04:45.6064900Z 
+2026-09-17T17:04:45.6065152Z =================================== FAILURES ===================================
+2026-09-17T17:04:45.6065921Z __________________ test_send_req_attempts_3_times_then_fails ___________________
+2026-09-17T17:04:45.6066617Z 
+2026-09-17T17:04:45.6067155Z monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7a69c1eea0>
+2026-09-17T17:04:45.6068200Z 
+2026-09-17T17:04:45.6068831Z     def test_send_req_attempts_3_times_then_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+2026-09-17T17:04:45.6070050Z         replies = [httpx.Response(503), httpx.Response(500), httpx.Response(502)]
+2026-09-17T17:04:45.6070929Z         sleeps = []
+2026-09-17T17:04:45.6071347Z     
+2026-09-17T17:04:45.6071735Z         def fake_httpx_post(url, **kwargs):
+2026-09-17T17:04:45.6072351Z             return replies.pop(0)
+2026-09-17T17:04:45.6072851Z     
+2026-09-17T17:04:45.6073433Z         monkeypatch.setattr(explain.httpx, "post", fake_httpx_post)
+2026-09-17T17:04:45.6074481Z         monkeypatch.setattr(explain.time, "sleep", lambda seconds: sleeps.append(seconds))
+2026-09-17T17:04:45.6075400Z     
+2026-09-17T17:04:45.6075848Z         with pytest.raises(ModelError, match="502"):
+2026-09-17T17:04:45.6076509Z             explain.send_req(
+2026-09-17T17:04:45.6077147Z                 "not-real-api-key", {"model": "not-real-model", "messages": []}
+2026-09-17T17:04:45.6077978Z             )
+2026-09-17T17:04:45.6078291Z     
+2026-09-17T17:04:45.6078596Z         assert not replies
+2026-09-17T17:04:45.6078989Z >       assert sleeps == [2, 4]
+2026-09-17T17:04:45.6079401Z E       assert [3, 6] == [2, 4]
+2026-09-17T17:04:45.6079772Z E         
+2026-09-17T17:04:45.6080094Z E         At index 0 diff: 3 != 2
+2026-09-17T17:04:45.6080475Z E         
+2026-09-17T17:04:45.6080782Z E         Full diff:
+2026-09-17T17:04:45.6081117Z E           [
+2026-09-17T17:04:45.6081430Z E         -     2,
+2026-09-17T17:04:45.6081762Z E         ?     ^
+2026-09-17T17:04:45.6082077Z E         +     3,
+2026-09-17T17:04:45.6082384Z E         ?     ^
+2026-09-17T17:04:45.6082699Z E         -     4,
+2026-09-17T17:04:45.6083011Z E         ?     ^
+2026-09-17T17:04:45.6083317Z E         +     6,
+2026-09-17T17:04:45.6083626Z E         ?     ^
+2026-09-17T17:04:45.6083938Z E           ]
+2026-09-17T17:04:45.6084118Z 
+2026-09-17T17:04:45.6084304Z tests/test_explain.py:59: AssertionError
+2026-09-17T17:04:45.6084906Z ----------------------------- Captured stderr call -----------------------------
+2026-09-17T17:04:45.6085705Z model request failed due to (503: no details), retrying in 3 seconds
+2026-09-17T17:04:45.6086417Z model request failed due to (500: no details), retrying in 6 seconds
+2026-09-17T17:04:45.6087151Z _______________ test_get_wait_returns_backoff_if_header_is_date ________________
+2026-09-17T17:04:45.6087812Z 
+2026-09-17T17:04:45.6088101Z     def test_get_wait_returns_backoff_if_header_is_date() -> None:
+2026-09-17T17:04:45.6088991Z         headers = [
+2026-09-17T17:04:45.6089519Z             httpx.Response(429, headers={"Retry-After": "Nov 17 2026 16:22"}),
+2026-09-17T17:04:45.6090283Z             httpx.Response(429, headers={"Retry-After": "Nov 18 2026 16:22"}),
+2026-09-17T17:04:45.6091033Z             httpx.Response(429, headers={"Retry-After": "Nov 19 2026 16:22"}),
+2026-09-17T17:04:45.6091603Z         ]
+2026-09-17T17:04:45.6091917Z         backoffs = [2, 4, 8]
+2026-09-17T17:04:45.6092312Z     
+2026-09-17T17:04:45.6092639Z         for attempt in range(MAX_ATTEMPTS):
+2026-09-17T17:04:45.6093214Z >           assert get_wait(headers[attempt], attempt) == backoffs[attempt]
+2026-09-17T17:04:45.6093779Z E           assert 3 == 2
+2026-09-17T17:04:45.6094257Z E            +  where 3 = get_wait(<Response [429 Too Many Requests]>, 0)
+2026-09-17T17:04:45.6094661Z 
+2026-09-17T17:04:45.6094834Z tests/test_explain.py:70: AssertionError
+2026-09-17T17:04:45.6095376Z =========================== short test summary info ============================
+2026-09-17T17:04:45.6096321Z FAILED tests/test_explain.py::test_send_req_attempts_3_times_then_fails - assert [3, 6] == [2, 4]
+2026-09-17T17:04:45.6097244Z   
+2026-09-17T17:04:45.6097764Z   At index 0 diff: 3 != 2
+2026-09-17T17:04:45.6098149Z   
+2026-09-17T17:04:45.6098544Z   Full diff:
+2026-09-17T17:04:45.6098849Z     [
+2026-09-17T17:04:45.6099131Z   -     2,
+2026-09-17T17:04:45.6099406Z   ?     ^
+2026-09-17T17:04:45.6099698Z   +     3,
+2026-09-17T17:04:45.6099966Z   ?     ^
+2026-09-17T17:04:45.6100241Z   -     4,
+2026-09-17T17:04:45.6100525Z   ?     ^
+2026-09-17T17:04:45.6100806Z   +     6,
+2026-09-17T17:04:45.6101111Z   ?     ^
+2026-09-17T17:04:45.6101377Z     ]
+2026-09-17T17:04:45.6101957Z FAILED tests/test_explain.py::test_get_wait_returns_backoff_if_header_is_date - assert 3 == 2
+2026-09-17T17:04:45.6102762Z  +  where 3 = get_wait(<Response [429 Too Many Requests]>, 0)
+2026-09-17T17:04:45.6103374Z ========================= 2 failed, 4 passed in 0.19s ==========================
+2026-09-17T17:04:45.6543763Z ##[error]Process completed with exit code 1.
+2026-09-17T17:04:45.6604237Z ##[group]Run uv run python -m de_pipeline.explain test.log | tee -a "$GITHUB_STEP_SUMMARY"
+2026-09-17T17:04:45.6604935Z [36;1muv run python -m de_pipeline.explain test.log | tee -a "$GITHUB_STEP_SUMMARY"[0m
+2026-09-17T17:04:45.6642263Z shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+2026-09-17T17:04:45.6642627Z env:
+2026-09-17T17:04:45.6642926Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+2026-09-17T17:04:45.6643342Z   UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+2026-09-17T17:04:45.6644063Z   GEMINI_API_KEY: ***
+2026-09-17T17:04:45.6644329Z   DE_PIPELINE_MODEL: gemini-3.5-flash-lite
+2026-09-17T17:04:45.6644629Z ##[endgroup]
+2026-09-17T17:05:12.7751707Z Summary: The CI run failed because the retry backoff implementation uses an initial wait time of 3 seconds instead of the expected 2 seconds.
+2026-09-17T17:05:12.7752876Z 
+2026-09-17T17:05:12.7756286Z Root cause: In `tests/test_explain.py`, two unit tests failed due to mismatching backoff sleep times. The test `test_send_req_attempts_3_times_then_fails` expected the sleep durations to be `[2, 4]`, but the code executed sleep durations of `[3, 6]`. Similarly, `test_get_wait_returns_backoff_if_header_is_date` expected a backoff of `2` for `attempt = 0`, but `get_wait` returned `3`.
+2026-09-17T17:05:12.7759777Z 
+2026-09-17T17:05:12.7759976Z Evidence:
+2026-09-17T17:05:12.7760444Z >       assert sleeps == [2, 4]
+2026-09-17T17:05:12.7761021Z E       assert [3, 6] == [2, 4]
+2026-09-17T17:05:12.7761352Z E         
+2026-09-17T17:05:12.7761642Z E         At index 0 diff: 3 != 2
+2026-09-17T17:05:12.7761879Z 
+2026-09-17T17:05:12.7762153Z >           assert get_wait(headers[attempt], attempt) == backoffs[attempt]
+2026-09-17T17:05:12.7762678Z E           assert 3 == 2
+2026-09-17T17:05:12.7763114Z E            +  where 3 = get_wait(<Response [429 Too Many Requests]>, 0)
+2026-09-17T17:05:12.7763484Z 
+2026-09-17T17:05:12.7763598Z Fix:
+2026-09-17T17:05:12.7764270Z 1. Open the source code file where `send_req` or backoff calculations (like `get_wait`) are defined (likely in `explain.py`).
+2026-09-17T17:05:12.7765463Z 2. Update the initial retry backoff value or multiplier from 3 to 2 so that the first retry waits 2 seconds instead of 3.
+2026-09-17T17:05:12.7766079Z 3. Rerun the tests locally using pytest to verify the fix:
+2026-09-17T17:05:12.7766416Z    ```bash
+2026-09-17T17:05:12.7766642Z    pytest tests/test_explain.py
+2026-09-17T17:05:12.7766892Z    ```
+2026-09-17T17:05:12.7767005Z 
+2026-09-17T17:05:12.7767687Z Confidence: high, because the exact expected versus actual values and failing test assertions are explicitly provided in the log.
+2026-09-17T17:05:12.8126808Z Post job cleanup.
+2026-09-17T17:05:12.9044759Z [command]/usr/bin/git version
+2026-09-17T17:05:12.9095463Z git version 2.55.0
+2026-09-17T17:05:12.9142237Z Temporarily overriding HOME='/home/runner/work/_temp/34926c9b-8d80-494b-92e8-b89544bf7b7b' before making global git config changes
+2026-09-17T17:05:12.9143892Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-17T17:05:12.9149997Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/de-pipeline/de-pipeline
+2026-09-17T17:05:12.9197850Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-17T17:05:12.9237287Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-17T17:05:12.9498628Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-17T17:05:12.9530110Z http.https://github.com/.extraheader
+2026-09-17T17:05:12.9542988Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-17T17:05:12.9581599Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-17T17:05:12.9854212Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-17T17:05:12.9898681Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-17T17:05:13.0358588Z Cleaning up orphan processes
