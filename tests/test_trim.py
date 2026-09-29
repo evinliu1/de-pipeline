@@ -11,30 +11,36 @@ from de_pipeline.trim import (
     fit_budget,
     merge,
     render_windows,
-    score_line
+    score_line,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
+LINES = [f"line {i}" for i in range(10)]
+
 
 def omitted(count: int) -> str:
     return f"... [{count} lines omitted] ..."
 
+
 def test_clean_lines_removes_timestamps() -> None:
     assert clean_lines("2026-09-14T10:00:12.1234567Z hello") == ["hello"]
+
 
 def test_clean_lines_removes_color_codes() -> None:
     assert clean_lines("\x1b[31mFAILED\x1b[0m test_a") == ["FAILED test_a"]
 
+
 def test_clean_lines_drops_blank_lines_and_trailing_whitespace() -> None:
     assert clean_lines("hello   \n\n   \nworld") == ["hello", "world"]
+
 
 @pytest.mark.parametrize(
     "noise",
     [
         "##[endgroup]",
         "remote: Counting objects: 100% (5/5), done.",
-        "Receiving objects: 100% (5/5), done."
-    ]
+        "Receiving objects: 100% (5/5), done.",
+    ],
 )
 def test_clean_lines_drops_noise(noise: str) -> None:
     assert clean_lines(noise) == []
@@ -75,6 +81,7 @@ def test_build_windows_surrounds_each_signal_and_adds_the_tail() -> None:
         Window(10, 26, 3.0),
         Window(10, 30, 1.0),
     ]
+
 
 def test_build_windows_clamps_at_the_start_of_the_log() -> None:
     scores = [5] + [0] * 29
@@ -131,16 +138,16 @@ def test_fit_budget_skips_a_window_that_does_not_fit_but_keeps_a_smaller_one() -
     lines = ["x" * 99] * 21
     windows = [Window(0, 10, 5.0), Window(10, 20, 3.0), Window(20, 21, 1.0)]
 
-    assert fit_budget(lines, windows, 1_100) == [Window(0, 10, 5.0), Window(20, 21, 1.0)]
+    assert fit_budget(lines, windows, 1_100) == [
+        Window(0, 10, 5.0),
+        Window(20, 21, 1.0),
+    ]
 
 
 def test_fit_budget_keeps_the_end_of_an_oversized_window() -> None:
     lines = ["x" * 99] * 100
 
     assert fit_budget(lines, [Window(0, 100, 1.0)], 1_000) == [Window(90, 100, 1.0)]
-
-
-LINES = [f"line {i}" for i in range(10)]
 
 
 def test_render_windows_marks_every_gap() -> None:

@@ -1,0 +1,304 @@
+<run>
+repository: evinliu1/de-pipeline
+workflow: CI
+branch: trim-tests
+commit: a7ad19f
+failed jobs: 1
+</run>
+
+<job>
+name: unit-tests
+failed steps: Run tests
+<log>
+... [122 lines omitted] ...
+  download-from-astral-mirror: true
+  add-problem-matchers: true
+  quiet: false
+  resolution-strategy: highest
+Trying to find version for uv in: /home/runner/work/de-pipeline/de-pipeline/uv.toml
+Could not find file: /home/runner/work/de-pipeline/de-pipeline/uv.toml
+Trying to find version for uv in: /home/runner/work/de-pipeline/de-pipeline/pyproject.toml
+Could not determine uv version from uv.toml or pyproject.toml. Falling back to latest.
+Fetching manifest data from https://raw.githubusercontent.com/astral-sh/versions/main/v1/uv.ndjson ...
+Downloading uv from "https://releases.astral.sh/github/uv/releases/download/0.12.19/uv-x86_64-unknown-linux-gnu.tar.gz" ...
+[command]/usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/e2eeb60c-84ae-472e-a446-422af0f6d1fd -f /home/runner/work/_temp/1431da6e-530c-4abe-bf36-0eca633057a3
+Added /home/runner/.local/bin to the path
+Added /opt/hostedtoolcache/uv/0.12.19/x86_64 to the path
+Set UV_PYTHON_INSTALL_DIR to /home/runner/work/_temp/uv-python-dir
+Added /home/runner/work/_temp/uv-python-dir to the path
+Set UV_CACHE_DIR to /home/runner/work/_temp/setup-uv-cache
+... [66 lines omitted] ...
+=================================== FAILURES ===================================
+_____________ test_fit_budget_keeps_the_end_of_an_oversized_window _____________
+    def test_fit_budget_keeps_the_end_of_an_oversized_window() -> None:
+        lines = ["x" * 99] * 100
+>       assert fit_budget(lines, [Window(0, 100, 1.0)], 1_000) == [Window(90, 100, 1.0)]
+E       assert [Window(start...0, score=1.0)] == [Window(start...0, score=1.0)]
+E
+E         At index 0 diff: Window(start=0, end=100, score=1.0) != Window(start=90, end=100, score=1.0)
+E
+E         Full diff:
+E           [
+E               Window(
+E         -         start=90,
+E         ?               -
+E         +         start=0,
+E                   end=100,
+E                   score=1.0,
+E               ),
+E           ]
+tests/test_trim.py:140: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_trim.py::test_fit_budget_keeps_the_end_of_an_oversized_window - assert [Window(start...0, score=1.0)] == [Window(start...0, score=1.0)]
+  At index 0 diff: Window(start=0, end=100, score=1.0) != Window(start=90, end=100, score=1.0)
+  Full diff:
+    [
+        Window(
+  -         start=90,
+  ?               -
+  +         start=0,
+            end=100,
+            score=1.0,
+        ),
+    ]
+========================= 1 failed, 50 passed in 0.34s =========================
+##[error]Process completed with exit code 1.
+##[group]Run uv run python -m de_pipeline.explain test.log | tee -a "$GITHUB_STEP_SUMMARY"
+uv run python -m de_pipeline.explain test.log | tee -a "$GITHUB_STEP_SUMMARY"
+shell: /usr/bin/bash --noprofile --norc -e -o pipefail {0}
+env:
+  UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+  UV_CACHE_DIR: /home/runner/work/_temp/setup-uv-cache
+  GEMINI_API_KEY: ***
+  DE_PIPELINE_MODEL: gemini-3.5-flash-lite
+### SUMMARY ###
+The test test_fit_budget_keeps_the_end_of_an_oversized_window failed because the fit_budget function returned a window starting at 0 instead of 90.
+### ROOT CAUSE ###
+The function fit_budget failed to keep the end of the oversized window as expected by the test in tests/test_trim.py. Instead of returning a window with start=90, it returned a window with start=0, causing an AssertionError during the comparison.
+### EVIDENCE ###
+excerpt:
+E       At index 0 diff: Window(start=0, end=100, score=1.0) != Window(start=90, end=100, score=1.0)
+explanation: Shows the exact difference between the expected and actual window start index returned by fit_budget.
+excerpt:
+tests/test_trim.py:140: AssertionError
+explanation: Points to the exact line in the test file where the assertion failed.
+### FIX STEPS ###
+1. Open tests/test_trim.py around line 140 to review the test expectations for fit_budget.
+2. Inspect the implementation of the fit_budget function to ensure it correctly trims oversized windows from the beginning and keeps the end.
+3. Modify the fit_budget logic so that it properly adjusts the start index to 90 for oversized windows when required.
+### CONFIDENCE ###
+high
+Post job cleanup.
+[command]/usr/bin/git version
+git version 2.55.0
+Temporarily overriding HOME='/home/runner/work/_temp/e498f4a1-777b-4e06-a5fe-6c76e7a21636' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+[command]/usr/bin/git config --global --add safe.directory /home/runner/work/de-pipeline/de-pipeline
+[command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+http.https://github.com/.extraheader
+[command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+[command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+[command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+[command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+Cleaning up orphan processes
+<log>
+</job>
+
+<diff source="commit a7ad19f">
+diff --git a/src/de_pipeline/config.py b/src/de_pipeline/config.py
+index 7f320db..b39c119 100644
+--- a/src/de_pipeline/config.py
++++ b/src/de_pipeline/config.py
+@@ -6,7 +6,7 @@
+ MAX_ATTEMPTS = 3
+ MAX_WAIT_SECONDS = 30
+ RETRIABLE_STATUSES = {429, 500, 502, 503, 504}
+-MAX_LOG_CHARS = 2_000
++MAX_LOG_CHARS = 20_000
+ 
+ 
+ def get_env(key_name: str) -> str:
+diff --git a/src/de_pipeline/trim.py b/src/de_pipeline/trim.py
+index 0e5f700..f05751d 100644
+--- a/src/de_pipeline/trim.py
++++ b/src/de_pipeline/trim.py
+@@ -96,16 +96,16 @@ def fit_budget(lines: list[str], windows: list[Window], max_chars: int) -> list[
+     total_chars = 0
+     windows = sorted(windows, key=lambda window: window.score, reverse=True)
+     for window in windows:
++        start = window.start
+         size = sum(1 + len(line) for line in lines[window.start:window.end])
+         while size > max_chars:
+-            window.start += 1
+-            size = sum(1 + len(line) for line in lines[window.start:window.end])
++            size -= len(lines[start]) + 1
++            start += 1
+         if total_chars + size <= max_chars:
+             budgeted_windows.append(window)
+             total_chars += size
+ 
+-    budgeted_windows = sorted(budgeted_windows, key=lambda window: window.start)
+-    return budgeted_windows
++    return sorted(budgeted_windows, key=lambda window: window.start)
+ 
+ def merge(windows: list[Window]) -> list[Window]:
+     windows = sorted(windows, key=lambda window: window.start)
+diff --git a/tests/fixtures/ci.log b/tests/fixtures/ci.log
+new file mode 100644
+index 0000000..64ff828
+--- /dev/null
++++ b/tests/fixtures/ci.log
+@@ -0,0 +1,349 @@
++﻿2026-09-17T17:04:39.9764924Z Current runner version: '2.337.0'
++2026-09-17T17:04:39.9792396Z ##[group]Runner Image Provisioner
++2026-09-17T17:04:39.9793383Z Hosted Compute Agent
++2026-09-17T17:04:39.9794094Z Version: 20260828.587
++2026-09-17T17:04:39.9794816Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
++2026-09-17T17:04:39.9795611Z Build Date: 2026-08-28T16:44:25Z
++2026-09-17T17:04:39.9796326Z Worker ID: {a3926d42-15f2-4d19-b4f6-6100cfe412a8}
++2026-09-17T17:04:39.9797152Z Azure Region: eastus
++2026-09-17T17:04:39.9798006Z ##[endgroup]
++2026-09-17T17:04:39.9800310Z ##[group]Operating System
++2026-09-17T17:04:39.9801006Z Ubuntu
++2026-09-17T17:04:39.9801616Z 24.04.5
++2026-09-17T17:04:39.9802207Z LTS
++2026-09-17T17:04:39.9802753Z ##[endgroup]
++2026-09-17T17:04:39.9803387Z ##[group]Runner Image
++2026-09-17T17:04:39.9804057Z Image: ubuntu-24.04
++2026-09-17T17:04:39.9804680Z Version: 20260907.300.1
++2026-09-17T17:04:39.9806048Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260907.300/images/ubuntu/Ubuntu2404-Readme.md
++2026-09-17T17:04:39.9808165Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260907.300
++2026-09-17T17:04:39.9809227Z ##[endgroup]
++2026-09-17T17:04:39.9810687Z ##[group]GITHUB_TOKEN Permissions
++2026-09-17T17:04:39.9813107Z Contents: read
++2026-09-17T17:04:39.9813879Z Metadata: read
++2026-09-17T17:04:39.9814494Z ##[endgroup]
++2026-09-17T17:04:39.9816707Z Secret source: Actions
++2026-09-17T17:04:39.9818212Z Cache mode: write
++2026-09-17T17:04:39.9819231Z Prepare workflow directory
++2026-09-17T17:04:40.0164212Z Prepare all required actions
++2026-09-17T17:04:40.0214536Z Getting action download info
++2026-09-17T17:04:40.2530183Z Download action repository 'actions/checkout@v5' (SHA:fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09)
++2026-09-17T17:04:40.3911744Z Download action repository 'astral-sh/setup-uv@v9.0.0' (SHA:c771a70e6277c0a99b617c7a806ffedaca235ff9)
++2026-09-17T17:04:40.7041410Z Complete job name: unit-tests
++2026-09-17T17:04:40.7863323Z ##[group]Run actions/checkout@v5
++2026-09-17T17:04:40.7864282Z with:
++2026-09-17T17:04:40.7864781Z   repository: evinliu1/de-pipeline
++2026-09-17T17:04:40.7869328Z   token: ***
++2026-09-17T17:04:40.7869812Z   ssh-strict: true
++2026-09-17T17:04:40.7870278Z   ssh-user: git
++2026-09-17T17:04:40.7870750Z   persist-credentials: true
++2026-09-17T17:04:40.7871255Z   clean: true
++2026-09-17T17:04:40.7871727Z   sparse-checkout-cone-mode: true
++2026-09-17T17:04:40.7872277Z   fetch-depth: 1
++2026-09-17T17:04:40.7872734Z   fetch-tags: false
++2026-09-17T17:04:40.7873201Z   show-progress: true
++2026-09-17T17:04:40.7873678Z   lfs: false
++2026-09-17T17:04:40.7874111Z   submodules: false
++2026-09-17T17:04:40.7874589Z   set-safe-directory: true
++2026-09-17T17:04:40.7875123Z   allow-unsafe-pr-checkout: false
++2026-09-17T17:04:40.7875961Z ##[endgroup]
++2026-09-17T17:04:40.8955478Z Syncing repository: evinliu1/de-pipeline
++2026-09-17T17:04:40.8958509Z ##[group]Getting Git version info
++2026-09-17T17:04:40.8960005Z Working directory is '/home/runner/work/de-pipeline/de-pipeline'
++2026-09-17T17:04:40.8961941Z [command]/usr/bin/git version
++2026-09-17T17:04:40.9005877Z git version 2.55.0
++2026-09-17T17:04:40.9039215Z ##[endgroup]
++2026-09-17T17:04:40.9047595Z Temporarily overriding HOME='/home/runner/work/_temp/70e29371-d9a1-4c13-b995-d748018cb218' before making global git config changes
++2026-09-17T17:04:40.9049907Z Adding repository directory to the temporary git global config as a safe directory
++2026-09-17T17:04:40.9054142Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/de-pipeline/de-pipeline
++2026-09-17T17:04:40.9115413Z Deleting the contents of '/home/runner/work/de-pipeline/de-pipeline'
++2026-09-17T17:04:40.9121599Z ##[group]Initializing the repository
++2026-09-17T17:04:40.9126694Z [command]/usr/bin/git init /home/runner/work/de-pipeline/de-pipeline
++2026-09-17T17:04:40.9271323Z hint: Using 'master' as the name for the initial branch. This default branch name
++2026-09-17T17:04:40.9273942Z hint: will change to "main" in Git 3.0. To configure the initial branch name
++2026-09-17T17:04:40.9277203Z hint: to use in all of your new repositories, which will suppress this warning,
++2026-09-17T17:04:40.9278753Z hint: call:
++2026-09-17T17:04:40.9279520Z hint:
++2026-09-17T17:04:40.9280116Z hint: 	git config --global init.defaultBranch <name>
++2026-09-17T17:04:40.9280773Z hint:
++2026-09-17T17:04:40.9281542Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
++2026-09-17T17:04:40.9282664Z hint: 'development'. The just-created branch can be renamed via this command:
++2026-09-17T17:04:40.9283764Z hint:
++2026-09-17T17:04:40.9284487Z hint: 	git branch -m <name>
++2026-09-17T17:04:40.9285120Z hint:
++2026-09-17T17:04:40.9285799Z hint: Disable this message with "git config set advice.defaultBranchName false"
++2026-09-17T17:04:40.9286869Z Initialized empty Git repository in /home/runner/work/de-pipeline/de-pipeline/.git/
++2026-09-17T17:04:40.9289145Z [command]/usr/bin/git remote add origin https://github.com/evinliu1/de-pipeline
++2026-09-17T17:04:40.9336344Z ##[endgroup]
++2026-09-17T17:04:40.9337204Z ##[group]Disabling automatic garbage collection
++2026-09-17T17:04:40.9342513Z [command]/usr/bin/git config --local gc.auto 0
++2026-09-17T17:04:40.9376144Z ##[endgroup]
++2026-09-17T17:04:40.9386369Z ##[group]Setting up auth
++2026-09-17T17:04:40.9388468Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
++2026-09-17T17:04:40.9435113Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
++2026-09-17T17:04:40.9831565Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
++2026-09-17T17:04:40.9883837Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
++2026-09-17T17:04:41.0143170Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
++2026-09-17T17:04:41.0200104Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
++2026-09-17T17:04:41.0467681Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
++2026-09-17T17:04:41.0519771Z ##[endgroup]
++2026-09-17T17:04:41.0521533Z ##[group]Fetching the repository
++2026-09-17T17:04:41.0531830Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +9c3cb7695c086749683f4f0d9554736f5f6f13cf:refs/remotes/pull/11/merge
++2026-09-17T17:04:41.3791188Z From https://github.com/evinliu1/de-pipeline
++2026-09-17T17:04:41.3793913Z  * [new ref]         9c3cb7695c086749683f4f0d9554736f5f6f13cf -> pull/11/merge
++2026-09-17T17:04:41.3799062Z ##[endgroup]
++2026-09-17T17:04:41.3801622Z ##[group]Determining the checkout info
++2026-09-17T17:04:41.3804628Z ##[endgroup]
++2026-09-17T17:04:41.3806266Z [command]/usr/bin/git sparse-checkout disable
++2026-09-17T17:04:41.3865108Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
++2026-09-17T17:04:41.3930200Z ##[group]Checking out the ref
++2026-09-17T17:04:41.3932722Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/11/merge
++2026-09-17T17:04:41.3995607Z Note: switching to 'refs/remotes/pull/11/merge'.
++2026-09-17T17:04:41.3996796Z 
++2026-09-17T17:04:41.3997996Z You are in 'detached HEAD' state. You can look around, make experimental
++2026-09-17T17:04:41.4000392Z changes and commit them, and you can discard any commits you make in this
++2026-09-17T17:04:41.4002477Z state without impacting any branches by switching back to a branch.
++2026-09-17T17:04:41.4003409Z 
++2026-09-17T17:04:41.4004490Z If you want to create a new branch to retain commits you create, you may
++2026-09-17T17:04:41.4006061Z do so (now or later) by using -c with the switch command. Example:
++2026-09-17T17:04:41.4006819Z 
++2026-09-17T17:04:41.4007180Z   git switch -c <new-branch-name>
++2026-09-17T17:04:41.4008132Z 
++2026-09-17T17:04:41.4008795Z Or undo this operation with:
++2026-09-17T17:04:41.4009297Z 
++2026-09-17T17:04:41.4009626Z   git switch -
++2026-09-17T17:04:41.4010002Z 
++2026-09-17T17:04:41.4010710Z Turn off this advice by setting config variable advice.detachedHead to false
++2026-09-17T17:04:41.4011718Z 
++2026-09-17T17:04:41.4012834Z HEAD is now at 9c3cb76 Merge bc1b6ba9a34a2b3ab2d5320be416ab66384bba80 into 44b670bee8f9d5348969204ec209827b7f4c23fa
++2026-09-17T17:04:41.4016344Z ##[endgroup]
++2026-09-17T17:04:41.4056220Z [command]/usr/bin/git log -1 --format=%H
++2026-09-17T17:04:41.4084515Z 9c3cb7695c086749683f4f0d9554736f5f6f13cf
++2026-09-17T17:04:41.4613433Z ##[group]Run astral-sh/setup-uv@v9.0.0
++2026-09-17T17:04:41.4614358Z with:
++2026-09-17T17:04:41.4614916Z   activate-environment: false
++2026-09-17T17:04:41.4615645Z   no-project: false
++2026-09-17T17:04:41.4616522Z   working-directory: /home/runner/work/de-pipeline/de-pipeline
++2026-09-17T17:04:41.4627810Z   github-token: ***
++2026-09-17T17:04:41.4628446Z   enable-cache: auto
++2026-09-17T17:04:41.4630469Z   cache-dependency-glob: **/*requirements*.txt
++**/*requirements*.in
++**/*constraints*.txt
++**/*constraints*.in
++**/pyproject.toml
++**/uv.lock
++**/*.py.lock
++
++2026-09-17T17:04:41.4632654Z   restore-cache: true
++2026-09-17T17:04:41.4633264Z   save-cache: true
++2026-09-17T17:04:41.4633831Z   prune-cache: false
++2026-09-17T17:04:41.4634442Z   cache-python: false
++2026-09-17T17:04:41.4635100Z   ignore-nothing-to-cache: false
++2026-09-17T17:04:41.4635895Z   ignore-empty-workdir: false
++2026-09-17T17:04:41.4636663Z   download-from-astral-mirror: true
++2026-09-17T17:04:41.4637811Z   add-problem-matchers: true
++2026-09-17T17:04:41.4638527Z   quiet: false
++2026-09-17T17:04:41.4639098Z   resolution-strategy: highest
++2026-09-17T17:04:41.4639803Z ##[endgroup]
++2026-09-17T17:04:41.6505939Z Trying to find version for uv in: /home/runner/work/de-pipeline/de-pipeline/uv.toml
++2026-09-17T17:04:41.6509413Z Could not find file: /home/runner/work/de-pipeline/de
+… [diff truncated] …
+</diff>

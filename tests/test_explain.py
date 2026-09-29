@@ -3,18 +3,10 @@ from pathlib import Path
 import httpx
 import pytest
 
-from de_pipeline import explain
-from de_pipeline.config import MAX_ATTEMPTS
-from de_pipeline.errors import (
-    ModelError,
-    UsageError,
-)
-from de_pipeline.explain import (
-    RESPONSE_FORMAT_SCHEMA,
-    get_file_path,
-    get_wait,
-    strip_json_fences,
-)
+from de_pipeline import explain, retry
+from de_pipeline.errors import ModelError, UsageError
+from de_pipeline.explain import RESPONSE_FORMAT_SCHEMA, parse_args, strip_json_fences
+from de_pipeline.files import get_file_path
 from de_pipeline.schema import Diagnosis
 
 
@@ -35,57 +27,28 @@ def test_send_req_retries_a_503_then_succeeds(monkeypatch: pytest.MonkeyPatch) -
     replies = [httpx.Response(503), ok("Summary: fixed")]
     calls = []
 
-    def fake_httpx_post(url, **kwargs):
+    def fake_request(method, url, **kwargs):
         calls.append(url)
         return replies.pop(0)
 
-    monkeypatch.setattr(explain.httpx, "post", fake_httpx_post)
-    monkeypatch.setattr(explain.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(retry.httpx, "request", fake_request)
+    monkeypatch.setattr(retry.time, "sleep", lambda seconds: None)
 
-    assert (
-        explain.send_req(
-            "not-real-api-key", {"model": "not-real-model", "messages": []}
-        )
-        == "Summary: fixed"
-    )
+    assert explain.send_req("not-real-api-key", {"model": "x", "messages": []}) == "Summary: fixed"
     assert len(calls) == 2
 
 
-def test_send_req_attempts_3_times_then_fails(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_send_req_reports_the_last_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     replies = [httpx.Response(503), httpx.Response(500), httpx.Response(502)]
     sleeps = []
-
-    def fake_httpx_post(url, **kwargs):
-        return replies.pop(0)
-
-    monkeypatch.setattr(explain.httpx, "post", fake_httpx_post)
-    monkeypatch.setattr(explain.time, "sleep", lambda seconds: sleeps.append(seconds))
+    monkeypatch.setattr(retry.httpx, "request", lambda method, url, **kwargs: replies.pop(0))
+    monkeypatch.setattr(retry.time, "sleep", sleeps.append)
 
     with pytest.raises(ModelError, match="502"):
-        explain.send_req(
-            "not-real-api-key", {"model": "not-real-model", "messages": []}
-        )
+        explain.send_req("not-real-api-key", {"model": "x", "messages": []})
 
     assert not replies
     assert sleeps == [2, 4]
-
-
-def test_get_wait_returns_backoff_if_header_is_date() -> None:
-    headers = [
-        httpx.Response(429, headers={"Retry-After": "Nov 17 2026 16:22"}),
-        httpx.Response(429, headers={"Retry-After": "Nov 18 2026 16:22"}),
-        httpx.Response(429, headers={"Retry-After": "Nov 19 2026 16:22"}),
-    ]
-    backoffs = [2, 4, 8]
-
-    for attempt in range(MAX_ATTEMPTS):
-        assert get_wait(headers[attempt], attempt) == backoffs[attempt]
-
-
-def test_get_wait_caps_at_max_wait() -> None:
-    headers = httpx.Response(429, headers={"Retry-After": "350"})
-    assert get_wait(headers, 1) == 30
-    assert get_wait(None, 10) == 30
 
 
 def test_schema_matches_the_model() -> None:
@@ -104,3 +67,31 @@ def test_schema_matches_the_model() -> None:
 )
 def test_strip_json_fences(text: str) -> None:
     assert strip_json_fences(text) == "{'hello': 'world'}"
+
+
+def test_parse_args_reads_a_log_file() -> None:
+    assert parse_args(["--log", "ci.log"]).log == Path("ci.log")
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        [],
+        ["--log", "ci.log", "--run-id", "1"],
+        ["--run-id", "not-a-number", "--repo", "a/b"],
+    ],
+)
+def test_parse_args_rejects_bad_input(argv: list[str]) -> None:
+    with pytest.raises(SystemExit):
+        parse_args(argv)
+
+
+def test_run_id_needs_a_repository(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
+    with pytest.raises(SystemExit):
+        parse_args(["--run-id", "5"])
+
+
+def test_repository_defaults_to_the_actions_variable(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_REPOSITORY", "evinliu1/de-pipeline")
+    assert parse_args(["--run-id", "5"]).repo == "evinliu1/de-pipeline"

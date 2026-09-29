@@ -20,3 +20,15 @@ class ModelError(DePipelineError):
 
 class DiagnosisError(DePipelineError):
     """Error parsing content into Diagnosis class"""
+
+
+class GitHubError(DePipelineError):
+    """A GitHub API request failed."""
+
+    def __init__(self, message: str, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status
+
+
+class NoFailuresError(DePipelineError):
+    """The run has no failed jobs to analyze, for example because it was cancelled."""
