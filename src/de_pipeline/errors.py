@@ -21,6 +21,7 @@ class ModelError(DePipelineError):
 class DiagnosisError(DePipelineError):
     """Error parsing content into Diagnosis class"""
 
+
 class GitHubError(DePipelineError):
     """A GitHub API request failed."""
 

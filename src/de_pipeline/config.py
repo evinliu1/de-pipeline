@@ -11,6 +11,7 @@ GITHUB_API = "https://api.github.com"
 GITHUB_API_VERSION = "2022-11-28"
 MAX_DIFF_CHARS = 12_000
 
+
 def get_env(key_name: str) -> str:
     val = os.getenv(key_name)
     if not val:

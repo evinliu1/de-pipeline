@@ -20,7 +20,9 @@ def main() -> None:
     print(f"commit:      {failure.sha[:7]}")
     print(f"failed jobs: {failure.total_failed_jobs}")
     for job in failure.jobs:
-        print(f"  {job.name}: failed steps {job.failed_steps}, log {len(job.log):,} chars")
+        print(
+            f"  {job.name}: failed steps {job.failed_steps}, log {len(job.log):,} chars"
+        )
     print(f"diff:        {failure.diff_source}, {len(failure.diff or ''):,} chars")
 
 

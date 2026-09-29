@@ -1,5 +1,4 @@
 import sys
-from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -19,7 +18,6 @@ PERMISSIONS = {
     "/commits/": "contents: read",
 }
 from de_pipeline.models import FailedJob, RunFailure
-
 
 
 def github_get(
@@ -66,7 +64,9 @@ def permission_hint(path: str, status: int, message: str) -> str:
         return ""
     for fragment, permission in PERMISSIONS.items():
         if fragment in path:
-            return f". In GitHub Actions, grant the workflow the `{permission}` permission"
+            return (
+                f". In GitHub Actions, grant the workflow the `{permission}` permission"
+            )
     return ""
 
 
@@ -78,7 +78,9 @@ def failed_jobs(repo: str, run_id: int, token: str) -> list[dict[str, Any]]:
     res = github_get(
         f"/repos/{repo}/actions/runs/{run_id}/jobs", token, params={"per_page": 100}
     )
-    return [job for job in res.json()["jobs"] if job["conclusion"] in FAILED_CONCLUSIONS]
+    return [
+        job for job in res.json()["jobs"] if job["conclusion"] in FAILED_CONCLUSIONS
+    ]
 
 
 def failed_steps(job: dict[str, Any]) -> list[str]:
@@ -133,7 +135,10 @@ def collect(repo: str, run_id: int, token: str) -> RunFailure:
     for job in jobs[:MAX_JOBS]:
         log = job_log(repo, job["id"], token)
         if log is None:
-            print(f"warning: the log for job {job['name']!r} is unavailable", file=sys.stderr)
+            print(
+                f"warning: the log for job {job['name']!r} is unavailable",
+                file=sys.stderr,
+            )
         collected.append(
             FailedJob(
                 name=job["name"],

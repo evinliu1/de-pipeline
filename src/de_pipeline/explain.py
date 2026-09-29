@@ -1,30 +1,30 @@
+import argparse
 import json
+import os
 import sys
 import time
-import os
-import argparse
+from pathlib import Path
 from typing import Any
 
 import httpx
 import pydantic
 from dotenv import load_dotenv
-from pathlib import Path
+
 from de_pipeline.config import (
     GEMINI_URL,
     MAX_ATTEMPTS,
+    MAX_DIFF_CHARS,
     MAX_LOG_CHARS,
     MAX_WAIT_SECONDS,
     RETRIABLE_STATUSES,
-    MAX_DIFF_CHARS,
     get_env,
 )
 from de_pipeline.errors import DePipelineError, DiagnosisError, LogFileError, ModelError
 from de_pipeline.files import get_file_contents
+from de_pipeline.github import collect
+from de_pipeline.models import FailedJob, RunFailure
 from de_pipeline.schema import Diagnosis
 from de_pipeline.trim import extract
-from de_pipeline.models import FailedJob, RunFailure
-from de_pipeline.github import collect
-
 
 SYSTEM_PROMPT = """
 You're a software engineer who diagnoses failed CI runs.
@@ -106,8 +106,10 @@ RESPONSE_FORMAT_SCHEMA = {
     },
 }
 
+
 def wrap_log(text: str) -> str:
     return f"<log>\n{text}\n</log>"
+
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -115,8 +117,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description="Explain why a CI run failed.",
     )
     source = parser.add_mutually_exclusive_group(required=True)
-    source.add_argument("--log", type=Path, metavar="FILE", help="a log file to diagnose")
-    source.add_argument("--run-id", type=int, metavar="ID", help="a GitHub Actions run to diagnose")
+    source.add_argument(
+        "--log", type=Path, metavar="FILE", help="a log file to diagnose"
+    )
+    source.add_argument(
+        "--run-id", type=int, metavar="ID", help="a GitHub Actions run to diagnose"
+    )
     parser.add_argument(
         "--repo",
         metavar="OWNER/NAME",
@@ -128,6 +134,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("--run-id needs --repo or the GITHUB_REPOSITORY variable")
     return args
 
+
 def load_failure(args: argparse.Namespace) -> RunFailure:
     if args.log is not None:
         contents = get_file_contents(args.log)
@@ -138,6 +145,7 @@ def load_failure(args: argparse.Namespace) -> RunFailure:
             total_failed_jobs=1,
         )
     return collect(args.repo, args.run_id, get_env("GITHUB_TOKEN"))
+
 
 def build_user_message(failure: RunFailure) -> str:
     """The run's details, each failed job's trimmed log, and the diff, in tagged sections."""
@@ -171,6 +179,7 @@ def build_user_message(failure: RunFailure) -> str:
         parts += ["", "(no diff available)"]
 
     return "\n".join(parts)
+
 
 def error_message(res: httpx.Response) -> str:
     try:
