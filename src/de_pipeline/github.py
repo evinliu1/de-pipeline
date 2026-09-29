@@ -5,6 +5,7 @@ import httpx
 
 from de_pipeline.config import GITHUB_API, GITHUB_API_VERSION
 from de_pipeline.errors import GitHubError, NoFailuresError
+from de_pipeline.retry import request_with_retry
 
 JSON = "application/vnd.github+json"
 DIFF = "application/vnd.github.diff"
@@ -26,13 +27,15 @@ def github_get(
     accept: str = JSON,
     params: dict[str, Any] | None = None,
 ) -> httpx.Response:
+    """Send a GET request to the GitHub API, raising GitHubError on any failure."""
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": accept,
         "X-GitHub-Api-Version": GITHUB_API_VERSION,
     }
     try:
-        res = httpx.get(
+        res = request_with_retry(
+            "GET",
             f"{GITHUB_API}{path}",
             headers=headers,
             params=params,
