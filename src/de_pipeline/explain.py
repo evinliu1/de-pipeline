@@ -2,7 +2,6 @@ import argparse
 import json
 import os
 import sys
-import time
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +11,7 @@ from dotenv import load_dotenv
 
 from de_pipeline.config import GEMINI_URL, MAX_DIFF_CHARS, MAX_LOG_CHARS, get_env
 from de_pipeline.retry import request_with_retry
-from de_pipeline.errors import DePipelineError, DiagnosisError, LogFileError, ModelError
+from de_pipeline.errors import DePipelineError, DiagnosisError, LogFileError, ModelError, NoFailuresError
 from de_pipeline.files import get_file_contents
 from de_pipeline.github import collect
 from de_pipeline.models import FailedJob, RunFailure
@@ -290,11 +289,13 @@ def main(argv: list[str] | None = None) -> None:
         api_key = get_env("GEMINI_API_KEY")
         model_name = get_env("DE_PIPELINE_MODEL")
         diagnosis = diagnose(api_key, model_name, build_user_message(failure))
+    except NoFailuresError as e:
+        print(f"nothing to diagnose: {e!s}", file=sys.stderr)
+        return
     except DePipelineError as e:
         sys.exit(f"error: {e!s}")
 
     print(render(diagnosis))
-
 
 if __name__ == "__main__":
     main()
