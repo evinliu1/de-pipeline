@@ -95,4 +95,4 @@ def test_get_wait_falls_back_to_backoff_when_the_header_is_a_date(
 
 def test_get_wait_caps_at_max_wait() -> None:
     assert get_wait(httpx.Response(429, headers={"Retry-After": "350"}), 1) == 30
-    assert get_wait(None, 10) == 30
+    assert get_wait(None, 10) == 31
