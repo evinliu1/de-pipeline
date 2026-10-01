@@ -13,7 +13,8 @@ from de_pipeline.config import GEMINI_URL, MAX_DIFF_CHARS, MAX_LOG_CHARS, get_en
 from de_pipeline.retry import request_with_retry
 from de_pipeline.errors import DePipelineError, DiagnosisError, LogFileError, ModelError, NoFailuresError
 from de_pipeline.files import get_file_contents
-from de_pipeline.github import collect
+from de_pipeline.github import collect, upsert_comment
+from de_pipeline.render import render, render_markdown
 from de_pipeline.models import FailedJob, RunFailure
 from de_pipeline.schema import Diagnosis
 from de_pipeline.trim import extract
@@ -112,21 +113,30 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description="Explain why a CI run failed.",
     )
     source = parser.add_mutually_exclusive_group(required=True)
-    source.add_argument(
-        "--log", type=Path, metavar="FILE", help="a log file to diagnose"
-    )
-    source.add_argument(
-        "--run-id", type=int, metavar="ID", help="a GitHub Actions run to diagnose"
-    )
+    source.add_argument("--log", type=Path, metavar="FILE", help="a log file to diagnose")
+    source.add_argument("--run-id", type=int, metavar="ID", help="a GitHub Actions run to diagnose")
     parser.add_argument(
         "--repo",
         metavar="OWNER/NAME",
         default=os.getenv("GITHUB_REPOSITORY"),
         help="the run's repository (default: the GITHUB_REPOSITORY variable)",
     )
+    parser.add_argument(
+        "--format",
+        choices=("text", "markdown"),
+        default="text",
+        help="output format (default: text)",
+    )
+    parser.add_argument(
+        "--comment",
+        action="store_true",
+        help="post the diagnosis on the run's pull request",
+    )
     args = parser.parse_args(argv)
     if args.run_id is not None and not args.repo:
         parser.error("--run-id needs --repo or the GITHUB_REPOSITORY variable")
+    if args.comment and args.run_id is None:
+        parser.error("--comment needs --run-id")
     return args
 
 
@@ -295,7 +305,30 @@ def main(argv: list[str] | None = None) -> None:
     except DePipelineError as e:
         sys.exit(f"error: {e!s}")
 
-    print(render(diagnosis))
+    if args.format == "markdown":
+        print(render_markdown(diagnosis, failure.url))
+    else:
+        print(render(diagnosis))
+
+    if args.comment:
+        post_comment(failure, diagnosis)
+
+
+def post_comment(failure: RunFailure, diagnosis: Diagnosis) -> None:
+    if failure.repo is None or failure.pull_request is None:
+        print("no open pull request for this run; skipping the comment", file=sys.stderr)
+        return
+    try:
+        url = upsert_comment(
+            failure.repo,
+            failure.pull_request,
+            render_markdown(diagnosis, failure.url),
+            get_env("GITHUB_TOKEN"),
+        )
+    except DePipelineError as e:
+        sys.exit(f"error: could not post the comment: {e!s}")
+    print(f"commented on pull request #{failure.pull_request}: {url}", file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()
