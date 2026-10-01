@@ -8,6 +8,7 @@ from typing import Any
 import httpx
 import pydantic
 from dotenv import load_dotenv
+from collections.abc import Iterable
 
 from de_pipeline.config import GEMINI_URL, MAX_DIFF_CHARS, MAX_LOG_CHARS, get_env
 from de_pipeline.retry import request_with_retry
@@ -15,6 +16,7 @@ from de_pipeline.errors import DePipelineError, DiagnosisError, LogFileError, Mo
 from de_pipeline.files import get_file_contents
 from de_pipeline.github import collect, upsert_comment
 from de_pipeline.render import render, render_markdown
+from de_pipeline.redact import redact
 from de_pipeline.models import FailedJob, RunFailure
 from de_pipeline.schema import Diagnosis
 from de_pipeline.trim import extract
@@ -152,7 +154,8 @@ def load_failure(args: argparse.Namespace) -> RunFailure:
     return collect(args.repo, args.run_id, get_env("GITHUB_TOKEN"))
 
 
-def build_user_message(failure: RunFailure) -> str:
+def build_user_message(failure: RunFailure, secrets: Iterable[str] = ()) -> str:
+    secrets = list(secrets)
     parts = ["<run>"]
     details = [
         ("repository", failure.repo),
@@ -165,17 +168,18 @@ def build_user_message(failure: RunFailure) -> str:
 
     per_job_budget = MAX_LOG_CHARS // max(1, len(failure.jobs))
     for job in failure.jobs:
+        excerpt = extract(redact(job.log, secrets), per_job_budget)
         parts += [
             "",
             "<job>",
             f"name: {job.name}",
             f"failed steps: {', '.join(job.failed_steps) or 'unknown'}",
-            wrap_log(extract(job.log, per_job_budget)),
+            wrap_log(excerpt),
             "</job>",
         ]
 
     if failure.diff:
-        diff = prepare_diff(failure.diff, MAX_DIFF_CHARS)
+        diff = prepare_diff(redact(failure.diff, secrets), MAX_DIFF_CHARS)
         parts += ["", f'<diff source="{failure.diff_source}">', diff, "</diff>"]
     else:
         parts += ["", "(no diff available)"]
@@ -298,7 +302,8 @@ def main(argv: list[str] | None = None) -> None:
         failure = load_failure(args)
         api_key = get_env("GEMINI_API_KEY")
         model_name = get_env("DE_PIPELINE_MODEL")
-        diagnosis = diagnose(api_key, model_name, build_user_message(failure))
+        secrets = [api_key, os.getenv("GITHUB_TOKEN", "")]
+        diagnosis = diagnose(api_key, model_name, build_user_message(failure, secrets))
     except NoFailuresError as e:
         print(f"nothing to diagnose: {e!s}", file=sys.stderr)
         return
