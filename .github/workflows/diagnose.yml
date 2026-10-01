@@ -13,7 +13,7 @@ on:
 permissions:
   actions: read
   contents: read
-  pull-requests: read
+  pull-requests: write
 
 jobs:
   diagnose:
@@ -33,10 +33,9 @@ jobs:
         shell: bash
         env:
           RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id || inputs.run_id }}
           GITHUB_TOKEN: ${{ github.token }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DE_PIPELINE_MODEL: ${{ vars.DE_PIPELINE_MODEL }}
         run: |
-          echo "Diagnosis of [run $RUN_ID]($RUN_URL)" >> "$GITHUB_STEP_SUMMARY"
-          uv run python -m de_pipeline.explain --run-id "$RUN_ID" | tee -a "$GITHUB_STEP_SUMMARY"
+          uv run python -m de_pipeline.explain --run-id "$RUN_ID" --format markdown --comment \
+            | tee -a "$GITHUB_STEP_SUMMARY"

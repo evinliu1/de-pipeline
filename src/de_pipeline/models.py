@@ -20,3 +20,4 @@ class RunFailure:
     url: str | None = None
     diff: str | None = None
     diff_source: str | None = None
+    pull_request: int | None = None

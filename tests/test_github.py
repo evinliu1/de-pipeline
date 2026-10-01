@@ -88,6 +88,7 @@ def test_collect_prefers_the_pull_request_diff(monkeypatch: pytest.MonkeyPatch) 
 
     assert failure.diff_source == "pull request #7"
     assert COMMIT_PATH not in requested
+    assert failure.pull_request == 7
 
 
 def test_collect_falls_back_when_the_pull_request_diff_is_too_large(
@@ -135,3 +136,87 @@ def test_a_forbidden_request_names_the_missing_permission(monkeypatch: pytest.Mo
 
     with pytest.raises(GitHubError, match="actions: read"):
         github.collect(REPO, 1, "fake-token")
+
+
+COMMENTS_PATH = f"/repos/{REPO}/issues/7/comments"
+
+
+def fake_api(
+    monkeypatch: pytest.MonkeyPatch, table: dict[tuple[str, str], httpx.Response]
+) -> list[tuple[str, str, object]]:
+    """Answer each request by method and path, and record what was sent."""
+    sent: list[tuple[str, str, object]] = []
+
+    def fake_request(method: str, url: str, **kwargs: object) -> httpx.Response:
+        path = url.removeprefix(API)
+        sent.append((method, path, kwargs.get("json")))
+        return table.get((method, path), httpx.Response(404, json={"message": "Not Found"}))
+
+    monkeypatch.setattr(retry.httpx, "request", fake_request)
+    monkeypatch.setattr(retry.time, "sleep", lambda seconds: None)
+    return sent
+
+
+def test_upsert_creates_a_comment_when_none_exists(monkeypatch: pytest.MonkeyPatch) -> None:
+    sent = fake_api(
+        monkeypatch,
+        {
+            ("GET", COMMENTS_PATH): httpx.Response(200, json=[]),
+            ("POST", COMMENTS_PATH): httpx.Response(201, json={"html_url": "https://github.com/c/1"}),
+        },
+    )
+
+    assert github.upsert_comment(REPO, 7, "body", "fake-token") == "https://github.com/c/1"
+    method, _, payload = sent[-1]
+    assert method == "POST"
+    assert payload["body"].startswith(github.COMMENT_MARKER)
+
+
+def test_upsert_edits_the_earlier_comment(monkeypatch: pytest.MonkeyPatch) -> None:
+    sent = fake_api(
+        monkeypatch,
+        {
+            ("GET", COMMENTS_PATH): httpx.Response(
+                200,
+                json=[
+                    {"id": 3, "body": "unrelated"},
+                    {"id": 9, "body": f"{github.COMMENT_MARKER}\nold diagnosis"},
+                ],
+            ),
+            ("PATCH", f"/repos/{REPO}/issues/comments/9"): httpx.Response(
+                200, json={"html_url": "https://github.com/c/9"}
+            ),
+        },
+    )
+
+    assert github.upsert_comment(REPO, 7, "new", "fake-token") == "https://github.com/c/9"
+    assert [method for method, _, _ in sent] == ["GET", "PATCH"]
+
+
+def test_a_failed_comment_is_not_posted_twice(monkeypatch: pytest.MonkeyPatch) -> None:
+    sent = fake_api(
+        monkeypatch,
+        {
+            ("GET", COMMENTS_PATH): httpx.Response(200, json=[]),
+            ("POST", COMMENTS_PATH): httpx.Response(502),
+        },
+    )
+
+    with pytest.raises(GitHubError):
+        github.upsert_comment(REPO, 7, "body", "fake-token")
+    assert [method for method, _, _ in sent].count("POST") == 1
+
+
+def test_a_forbidden_comment_names_the_permission(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_api(
+        monkeypatch,
+        {
+            ("GET", COMMENTS_PATH): httpx.Response(200, json=[]),
+            ("POST", COMMENTS_PATH): httpx.Response(
+                403, json={"message": "Resource not accessible by integration"}
+            ),
+        },
+    )
+
+    with pytest.raises(GitHubError, match="pull-requests: write"):
+        github.upsert_comment(REPO, 7, "body", "fake-token")

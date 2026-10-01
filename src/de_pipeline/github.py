@@ -7,6 +7,7 @@ from de_pipeline.config import GITHUB_API, GITHUB_API_VERSION
 from de_pipeline.errors import GitHubError, NoFailuresError
 from de_pipeline.retry import request_with_retry
 
+COMMENT_MARKER = "<!-- de-pipeline -->"
 JSON = "application/vnd.github+json"
 DIFF = "application/vnd.github.diff"
 FAILED_CONCLUSIONS = {"failure", "timed_out"}
@@ -14,6 +15,7 @@ MAX_JOBS = 3
 LOG_UNAVAILABLE = {404, 410}  # missing, or expired after the retention period
 DIFF_UNAVAILABLE = {404, 406, 422}  # missing, or too large for GitHub to render
 PERMISSIONS = {
+    "/comments": "pull-requests: write",
     "/actions/": "actions: read",
     "/pulls/": "pull-requests: read",
     "/commits/": "contents: read",
@@ -21,13 +23,16 @@ PERMISSIONS = {
 from de_pipeline.models import FailedJob, RunFailure
 
 
-def github_get(
+def github_request(
+    method: str,
     path: str,
     token: str,
+    *,
     accept: str = JSON,
     params: dict[str, Any] | None = None,
+    json: dict[str, Any] | None = None,
+    idempotent: bool = True,
 ) -> httpx.Response:
-    """Send a GET request to the GitHub API, raising GitHubError on any failure."""
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": accept,
@@ -35,10 +40,12 @@ def github_get(
     }
     try:
         res = request_with_retry(
-            "GET",
+            method,
             f"{GITHUB_API}{path}",
+            idempotent=idempotent,
             headers=headers,
             params=params,
+            json=json,
             follow_redirects=True,
             timeout=30,
         )
@@ -53,6 +60,12 @@ def github_get(
             status=res.status_code,
         )
     return res
+
+
+def github_get(
+    path: str, token: str, accept: str = JSON, params: dict[str, Any] | None = None
+) -> httpx.Response:
+    return github_request("GET", path, token, accept=accept, params=params)
 
 
 def github_message(res: httpx.Response) -> str:
@@ -138,10 +151,7 @@ def collect(repo: str, run_id: int, token: str) -> RunFailure:
     for job in jobs[:MAX_JOBS]:
         log = job_log(repo, job["id"], token)
         if log is None:
-            print(
-                f"warning: the log for job {job['name']!r} is unavailable",
-                file=sys.stderr,
-            )
+            print(f"warning: the log for job {job['name']!r} is unavailable", file=sys.stderr)
         collected.append(
             FailedJob(
                 name=job["name"],
@@ -152,6 +162,7 @@ def collect(repo: str, run_id: int, token: str) -> RunFailure:
         )
 
     diff = get_diff(repo, run, token)
+    pull_requests = run.get("pull_requests") or []
     return RunFailure(
         repo=repo,
         workflow=run["name"],
@@ -162,4 +173,40 @@ def collect(repo: str, run_id: int, token: str) -> RunFailure:
         total_failed_jobs=len(jobs),
         diff=diff[0] if diff else None,
         diff_source=diff[1] if diff else None,
+        pull_request=pull_requests[0]["number"] if pull_requests else None,
     )
+
+def find_comment(repo: str, number: int, token: str) -> int | None:
+    for page in range(1, 11):
+        comments = github_get(
+            f"/repos/{repo}/issues/{number}/comments",
+            token,
+            params={"per_page": 100, "page": page},
+        ).json()
+        for comment in comments:
+            if COMMENT_MARKER in comment.get("body", ""):
+                return int(comment["id"])
+        if len(comments) < 100:
+            break
+    return None
+
+
+def upsert_comment(repo: str, number: int, body: str, token: str) -> str:
+    body = f"{COMMENT_MARKER}\n{body}"
+    comment_id = find_comment(repo, number, token)
+    if comment_id is None:
+        res = github_request(
+            "POST",
+            f"/repos/{repo}/issues/{number}/comments",
+            token,
+            json={"body": body},
+            idempotent=False,
+        )
+    else:
+        res = github_request(
+            "PATCH",
+            f"/repos/{repo}/issues/comments/{comment_id}",
+            token,
+            json={"body": body},
+        )
+    return str(res.json()["html_url"])
