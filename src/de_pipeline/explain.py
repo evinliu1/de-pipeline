@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import sys
+import re
 from pathlib import Path
 from typing import Any
 
@@ -56,7 +57,7 @@ say why in one sentence.
 
 Reply with a single JSON object and nothing else.
 """
-
+CLOSING_TAG = re.compile(r"</(log|diff|job|run)\b", re.IGNORECASE)
 EVIDENCE_SCHEMA = {
     "type": "array",
     "items": {
@@ -106,7 +107,11 @@ RESPONSE_FORMAT_SCHEMA = {
 }
 
 def wrap_log(text: str) -> str:
-    return f"<log>\n{text}\n</log>"
+    return f"<log>\n{neutralize(text)}\n</log>"
+
+
+def neutralize(text: str) -> str:
+    return CLOSING_TAG.sub(r"<\\/\1", text)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -163,24 +168,25 @@ def build_user_message(failure: RunFailure, secrets: Iterable[str] = ()) -> str:
         ("branch", failure.branch),
         ("commit", failure.sha[:7] if failure.sha else None),
     ]
-    parts += [f"{label}: {value}" for label, value in details if value]
+    parts += [f"{label}: {neutralize(value)}" for label, value in details if value]
     parts += [f"failed jobs: {failure.total_failed_jobs}", "</run>"]
 
     per_job_budget = MAX_LOG_CHARS // max(1, len(failure.jobs))
     for job in failure.jobs:
         excerpt = extract(redact(job.log, secrets), per_job_budget)
+        steps = ", ".join(job.failed_steps) or "unknown"
         parts += [
             "",
             "<job>",
-            f"name: {job.name}",
-            f"failed steps: {', '.join(job.failed_steps) or 'unknown'}",
+            f"name: {neutralize(job.name)}",
+            f"failed steps: {neutralize(steps)}",
             wrap_log(excerpt),
             "</job>",
         ]
 
     if failure.diff:
         diff = prepare_diff(redact(failure.diff, secrets), MAX_DIFF_CHARS)
-        parts += ["", f'<diff source="{failure.diff_source}">', diff, "</diff>"]
+        parts += ["", f'<diff source="{failure.diff_source}">', neutralize(diff), "</diff>"]
     else:
         parts += ["", "(no diff available)"]
 
