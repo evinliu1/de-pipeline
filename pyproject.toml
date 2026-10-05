@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-de-pipeline = "de_pipeline:main"
+de-pipeline = "de_pipeline.explain:main"
 
 [build-system]
 requires = ["uv_build>=0.12.15,<0.13.0"]
