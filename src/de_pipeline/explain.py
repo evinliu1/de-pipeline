@@ -2,12 +2,14 @@ import argparse
 import json
 import os
 import sys
+import re
 from pathlib import Path
 from typing import Any
 
 import httpx
 import pydantic
 from dotenv import load_dotenv
+from collections.abc import Iterable
 
 from de_pipeline.config import GEMINI_URL, MAX_DIFF_CHARS, MAX_LOG_CHARS, get_env
 from de_pipeline.retry import request_with_retry
@@ -15,6 +17,7 @@ from de_pipeline.errors import DePipelineError, DiagnosisError, LogFileError, Mo
 from de_pipeline.files import get_file_contents
 from de_pipeline.github import collect, upsert_comment
 from de_pipeline.render import render, render_markdown
+from de_pipeline.redact import redact
 from de_pipeline.models import FailedJob, RunFailure
 from de_pipeline.schema import Diagnosis
 from de_pipeline.trim import extract
@@ -54,7 +57,7 @@ say why in one sentence.
 
 Reply with a single JSON object and nothing else.
 """
-
+CLOSING_TAG = re.compile(r"</(log|diff|job|run)\b", re.IGNORECASE)
 EVIDENCE_SCHEMA = {
     "type": "array",
     "items": {
@@ -104,7 +107,11 @@ RESPONSE_FORMAT_SCHEMA = {
 }
 
 def wrap_log(text: str) -> str:
-    return f"<log>\n{text}\n</log>"
+    return f"<log>\n{neutralize(text)}\n</log>"
+
+
+def neutralize(text: str) -> str:
+    return CLOSING_TAG.sub(r"<\\/\1", text)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -152,7 +159,8 @@ def load_failure(args: argparse.Namespace) -> RunFailure:
     return collect(args.repo, args.run_id, get_env("GITHUB_TOKEN"))
 
 
-def build_user_message(failure: RunFailure) -> str:
+def build_user_message(failure: RunFailure, secrets: Iterable[str] = ()) -> str:
+    secrets = list(secrets)
     parts = ["<run>"]
     details = [
         ("repository", failure.repo),
@@ -160,23 +168,25 @@ def build_user_message(failure: RunFailure) -> str:
         ("branch", failure.branch),
         ("commit", failure.sha[:7] if failure.sha else None),
     ]
-    parts += [f"{label}: {value}" for label, value in details if value]
+    parts += [f"{label}: {neutralize(value)}" for label, value in details if value]
     parts += [f"failed jobs: {failure.total_failed_jobs}", "</run>"]
 
     per_job_budget = MAX_LOG_CHARS // max(1, len(failure.jobs))
     for job in failure.jobs:
+        excerpt = extract(redact(job.log, secrets), per_job_budget)
+        steps = ", ".join(job.failed_steps) or "unknown"
         parts += [
             "",
             "<job>",
-            f"name: {job.name}",
-            f"failed steps: {', '.join(job.failed_steps) or 'unknown'}",
-            wrap_log(extract(job.log, per_job_budget)),
+            f"name: {neutralize(job.name)}",
+            f"failed steps: {neutralize(steps)}",
+            wrap_log(excerpt),
             "</job>",
         ]
 
     if failure.diff:
-        diff = prepare_diff(failure.diff, MAX_DIFF_CHARS)
-        parts += ["", f'<diff source="{failure.diff_source}">', diff, "</diff>"]
+        diff = prepare_diff(redact(failure.diff, secrets), MAX_DIFF_CHARS)
+        parts += ["", f'<diff source="{failure.diff_source}">', neutralize(diff), "</diff>"]
     else:
         parts += ["", "(no diff available)"]
 
@@ -298,7 +308,8 @@ def main(argv: list[str] | None = None) -> None:
         failure = load_failure(args)
         api_key = get_env("GEMINI_API_KEY")
         model_name = get_env("DE_PIPELINE_MODEL")
-        diagnosis = diagnose(api_key, model_name, build_user_message(failure))
+        secrets = [api_key, os.getenv("GITHUB_TOKEN", "")]
+        diagnosis = diagnose(api_key, model_name, build_user_message(failure, secrets))
     except NoFailuresError as e:
         print(f"nothing to diagnose: {e!s}", file=sys.stderr)
         return

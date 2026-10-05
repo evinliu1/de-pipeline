@@ -1,0 +1,48 @@
+name: de-pipeline
+description: Explain why a GitHub Actions run failed, and post the diagnosis on the pull request.
+author: evinliu1
+branding:
+  icon: activity
+  color: red
+
+inputs:
+  gemini-api-key:
+    description: Gemini API key. Store it as a secret.
+    required: true
+  model:
+    description: Gemini model name.
+    required: true
+  run-id:
+    description: The run to diagnose. Defaults to the run that triggered a workflow_run workflow.
+    required: false
+    default: ${{ github.event.workflow_run.id }}
+  github-token:
+    description: Token for reading the run and posting the comment.
+    required: false
+    default: ${{ github.token }}
+  comment:
+    description: Post the diagnosis on the pull request.
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v9.0.0
+
+    - name: Diagnose the failed run
+      shell: bash
+      env:
+        GEMINI_API_KEY: ${{ inputs.gemini-api-key }}
+        DE_PIPELINE_MODEL: ${{ inputs.model }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        RUN_ID: ${{ inputs.run-id }}
+        COMMENT: ${{ inputs.comment }}
+      run: |
+        export UV_PROJECT_ENVIRONMENT="$RUNNER_TEMP/de-pipeline-venv"
+        args=(--run-id "$RUN_ID" --format markdown)
+        if [ "$COMMENT" = "true" ]; then
+          args+=(--comment)
+        fi
+        uv run --project "$GITHUB_ACTION_PATH" --frozen --no-dev \
+          de-pipeline "${args[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
