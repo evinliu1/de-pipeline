@@ -18,6 +18,7 @@ from de_pipeline.files import get_file_contents
 from de_pipeline.github import collect, upsert_comment
 from de_pipeline.render import render, render_markdown
 from de_pipeline.redact import redact
+from de_pipeline.secrets import environment_secrets
 from de_pipeline.models import FailedJob, RunFailure
 from de_pipeline.schema import Diagnosis
 from de_pipeline.trim import extract
@@ -308,7 +309,7 @@ def main(argv: list[str] | None = None) -> None:
         failure = load_failure(args)
         api_key = get_env("GEMINI_API_KEY")
         model_name = get_env("DE_PIPELINE_MODEL")
-        secrets = [api_key, os.getenv("GITHUB_TOKEN", "")]
+        secrets = environment_secrets()
         diagnosis = diagnose(api_key, model_name, build_user_message(failure, secrets))
     except NoFailuresError as e:
         print(f"nothing to diagnose: {e!s}", file=sys.stderr)
