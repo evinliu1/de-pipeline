@@ -18,6 +18,8 @@ LOCK_FILES = {
 }
 NOISE_SUFFIXES = (".min.js", ".min.css", ".map", ".log")
 MAX_NAMES = 15
+MIN_TRUNCATED_CHARS = 400
+TRUNCATED = "\n… [rest of this file's changes truncated] …"
 
 
 @dataclass
@@ -59,11 +61,15 @@ def prepare_diff(diff: str, max_chars: int) -> str:
     used = 0
     for f in changes:
         size = len(f.text) + 1
-        if used + size <= max_chars:
+        room = max_chars - used
+        if size <= room:
             parts.append(f.text)
             used += size
         elif not parts:
-            parts.append(f.text[:max_chars] + "\n… [rest of this file's changes truncated] …")
+            parts.append(f.text[:max_chars] + TRUNCATED)
+            used = max_chars
+        elif room >= MIN_TRUNCATED_CHARS:
+            parts.append(f.text[:room] + TRUNCATED)
             used = max_chars
         else:
             skipped.append(f.path)

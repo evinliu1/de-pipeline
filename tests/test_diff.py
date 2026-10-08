@@ -23,11 +23,12 @@ def test_prepare_diff_keeps_code_and_names_what_it_dropped() -> None:
     assert "uv.lock" in prepared
 
 
-def test_prepare_diff_prefers_small_files_when_space_is_short() -> None:
+def test_prepare_diff_keeps_the_small_change_and_truncates_the_big_one() -> None:
     prepared = prepare_diff("\n".join([BIG, CODE]), max_chars=500)
 
     assert "+x = 2" in prepared
-    assert "no room for changes to: src/big.py" in prepared
+    assert "src/big.py" in prepared
+    assert "truncated" in prepared
 
 
 def test_prepare_diff_truncates_a_single_oversized_file() -> None:
@@ -39,3 +40,11 @@ def test_prepare_diff_truncates_a_single_oversized_file() -> None:
 
 def test_prepare_diff_of_non_git_text() -> None:
     assert prepare_diff("plain text", max_chars=5) == "plain"
+
+def test_prepare_diff_keeps_the_largest_change_when_the_budget_is_tight() -> None:
+    big = "diff --git a/src/core.py b/src/core.py\n" + "\n".join(f"+line {i}" for i in range(400))
+    smalls = "\n".join(
+        f"diff --git a/t{i}.py b/t{i}.py\n+tiny change {i}" for i in range(30)
+    )
+
+    assert "src/core.py" in prepare_diff(big + "\n" + smalls, 2000)
