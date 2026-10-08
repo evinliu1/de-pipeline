@@ -22,7 +22,7 @@ from de_pipeline.redact import redact
 from de_pipeline.secrets import environment_secrets
 from de_pipeline.models import FailedJob, RunFailure
 from de_pipeline.schema import Diagnosis
-from de_pipeline.trim import extract
+from de_pipeline.trim import extract, signal_score
 from de_pipeline.diff import prepare_diff
 
 SYSTEM_PROMPT = """
@@ -210,6 +210,24 @@ def load_failure(args: argparse.Namespace) -> RunFailure:
     return collect(args.repo, args.run_id, get_env("GITHUB_TOKEN"))
 
 
+def allocate(jobs: list[FailedJob]) -> list[tuple[FailedJob, int]]:
+    """Splits the log budget by signal, never exceeding it.
+
+    Every job keeps a floor so a quiet job still shows something, and the
+    remainder goes to the jobs with the strongest error signal. The shares sum
+    to exactly MAX_LOG_CHARS.
+    """
+    if not jobs:
+        return []
+    floor = min(MAX_LOG_CHARS // len(jobs), MAX_LOG_CHARS // (len(jobs) * 4) or 1)
+    spare = MAX_LOG_CHARS - floor * len(jobs)
+    scores = [max(1, signal_score(job.log)) for job in jobs]
+    total = sum(scores)
+    shares = [floor + spare * score // total for score in scores]
+    shares[max(range(len(shares)), key=lambda i: scores[i])] += MAX_LOG_CHARS - sum(shares)
+    return list(zip(jobs, shares))
+
+
 def build_user_message(failure: RunFailure, secrets: Iterable[str] = ()) -> str:
     secrets = list(secrets)
     parts = ["<run>"]
@@ -220,11 +238,17 @@ def build_user_message(failure: RunFailure, secrets: Iterable[str] = ()) -> str:
         ("commit", failure.sha[:7] if failure.sha else None),
     ]
     parts += [f"{label}: {neutralize(value)}" for label, value in details if value]
-    parts += [f"failed jobs: {failure.total_failed_jobs}", "</run>"]
+    analyzed = len(failure.jobs)
+    coverage = f"failed jobs: {failure.total_failed_jobs}"
+    if failure.total_failed_jobs > analyzed:
+        coverage += (
+            f" (the {analyzed} with the strongest error signal are included below;"
+            f" {failure.total_failed_jobs - analyzed} not shown)"
+        )
+    parts += [coverage, "</run>"]
 
-    per_job_budget = MAX_LOG_CHARS // max(1, len(failure.jobs))
-    for job in failure.jobs:
-        excerpt = extract(redact(job.log, secrets), per_job_budget)
+    for job, budget in allocate(failure.jobs):
+        excerpt = extract(redact(job.log, secrets), budget)
         steps = ", ".join(job.failed_steps) or "unknown"
         parts += [
             "",

@@ -6,12 +6,14 @@ import httpx
 from de_pipeline.config import GITHUB_API, GITHUB_API_VERSION
 from de_pipeline.errors import GitHubError, NoFailuresError
 from de_pipeline.retry import request_with_retry
+from de_pipeline.trim import signal_score
 
 COMMENT_MARKER = "<!-- de-pipeline -->"
 JSON = "application/vnd.github+json"
 DIFF = "application/vnd.github.diff"
 FAILED_CONCLUSIONS = {"failure", "timed_out"}
 MAX_JOBS = 3
+MAX_LOG_FETCHES = 10
 LOG_UNAVAILABLE = {404, 410}  # missing, or expired after the retention period
 DIFF_UNAVAILABLE = {404, 406, 422}  # missing, or too large for GitHub to render
 PERMISSIONS = {
@@ -147,19 +149,23 @@ def collect(repo: str, run_id: int, token: str) -> RunFailure:
     if not jobs:
         raise NoFailuresError(f"run {run_id} has no failed jobs to analyze")
 
-    collected = []
-    for job in jobs[:MAX_JOBS]:
+    logged = []
+    for job in jobs[:MAX_LOG_FETCHES]:
         log = job_log(repo, job["id"], token)
         if log is None:
             print(f"warning: the log for job {job['name']!r} is unavailable", file=sys.stderr)
-        collected.append(
-            FailedJob(
-                name=job["name"],
-                url=job["html_url"],
-                failed_steps=failed_steps(job),
-                log=log or "",
-            )
+        logged.append((job, log or ""))
+
+    logged.sort(key=lambda pair: signal_score(pair[1]), reverse=True)
+    collected = [
+        FailedJob(
+            name=job["name"],
+            url=job["html_url"],
+            failed_steps=failed_steps(job),
+            log=log,
         )
+        for job, log in logged[:MAX_JOBS]
+    ]
 
     diff = get_diff(repo, run, token)
     pull_requests = run.get("pull_requests") or []

@@ -102,6 +102,23 @@ def test_collect_falls_back_when_the_pull_request_diff_is_too_large(
     assert github.collect(REPO, 1, "fake-token").diff_source == "commit abc1234"
 
 
+def test_collect_keeps_the_jobs_with_the_strongest_error_signal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    table = routes()
+    quiet = [job(20 + i, f"quiet-{i}", "failure") for i in range(3)]
+    table[JOBS_PATH] = httpx.Response(200, json={"jobs": [*quiet, job(11, "unit-tests", "failure")]})
+    for i in range(3):
+        table[f"/repos/{REPO}/actions/jobs/{20 + i}/logs"] = httpx.Response(200, text="all fine")
+    fake_github(monkeypatch, table)
+
+    failure = github.collect(REPO, 1, "fake-token")
+
+    assert failure.jobs[0].name == "unit-tests"
+    assert len(failure.jobs) == github.MAX_JOBS
+    assert failure.total_failed_jobs == 4
+
+
 def test_collect_survives_an_expired_log(monkeypatch: pytest.MonkeyPatch) -> None:
     table = routes()
     table[LOG_PATH] = httpx.Response(410)
