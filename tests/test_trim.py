@@ -12,6 +12,7 @@ from de_pipeline.trim import (
     merge,
     render_windows,
     score_line,
+    signal_score,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -77,9 +78,9 @@ def test_build_windows_surrounds_each_signal_and_adds_the_tail() -> None:
     scores[15] = 3
 
     assert build_windows(scores) == [
-        Window(7, 23, 4.0),
-        Window(10, 26, 3.0),
-        Window(10, 30, 1.0),
+        Window(7, 23, 4.0, 12),
+        Window(10, 26, 3.0, 15),
+        Window(10, 30, 1.0, 29),
     ]
 
 
@@ -90,13 +91,13 @@ def test_build_windows_clamps_at_the_start_of_the_log() -> None:
 
 
 def test_build_windows_without_signals_returns_only_the_tail() -> None:
-    assert build_windows([0] * 10) == [Window(0, 10, 1.0)]
+    assert build_windows([0] * 10) == [Window(0, 10, 1.0, 9)]
 
 
 def test_merge_combines_overlapping_windows_and_adds_scores() -> None:
     windows = [Window(0, 10, 2.0), Window(5, 15, 3.0), Window(40, 50, 1.0)]
 
-    assert merge(windows) == [Window(0, 15, 5.0), Window(40, 50, 1.0)]
+    assert merge(windows) == [Window(0, 15, 5.0, 5), Window(40, 50, 1.0, 40)]
 
 
 def test_merge_combines_touching_windows() -> None:
@@ -105,7 +106,7 @@ def test_merge_combines_touching_windows() -> None:
 
 def test_merge_handles_unsorted_input() -> None:
     # build_windows appends the tail last, and it can start before the window ahead of it.
-    assert merge([Window(85, 100, 4.0), Window(80, 100, 1.0)]) == [Window(80, 100, 5.0)]
+    assert merge([Window(85, 100, 4.0), Window(80, 100, 1.0)]) == [Window(80, 100, 5.0, 85)]
 
 
 def test_merge_does_not_change_its_input() -> None:
@@ -138,16 +139,22 @@ def test_fit_budget_skips_a_window_that_does_not_fit_but_keeps_a_smaller_one() -
     lines = ["x" * 99] * 21
     windows = [Window(0, 10, 5.0), Window(10, 20, 3.0), Window(20, 21, 1.0)]
 
-    assert fit_budget(lines, windows, 1_100) == [
+    assert fit_budget(lines, windows, 1_200) == [
         Window(0, 10, 5.0),
         Window(20, 21, 1.0),
     ]
 
 
-def test_fit_budget_keeps_the_end_of_an_oversized_window() -> None:
+def test_fit_budget_trims_an_oversized_window_toward_its_anchor() -> None:
     lines = ["x" * 99] * 100
 
-    assert fit_budget(lines, [Window(0, 100, 1.0)], 1_000) == [Window(90, 100, 1.0)]
+    assert fit_budget(lines, [Window(0, 100, 1.0, 5)], 1_000) == [Window(0, 10, 1.0, 5)]
+
+
+def test_fit_budget_keeps_the_end_of_a_window_anchored_on_its_last_line() -> None:
+    lines = ["x" * 99] * 100
+
+    assert fit_budget(lines, [Window(0, 100, 1.0, 99)], 1_000) == [Window(90, 100, 1.0, 99)]
 
 
 def test_render_windows_marks_every_gap() -> None:
@@ -210,3 +217,18 @@ def test_extract_keeps_the_assertion_from_a_real_ci_log() -> None:
     raw = (FIXTURES / "ci.log").read_text(encoding="utf-8")
 
     assert "assert 3 == 2" in extract(raw, max_chars=MAX_LOG_CHARS)
+
+
+@pytest.mark.parametrize("budget", [500, 1000, 2000, 4000, 8000, 20000])
+def test_the_anchor_line_survives_a_tight_budget(budget: int) -> None:
+    log = "\n".join(
+        ["##[error] real failure here"] + ["ok " * 20] * 400 + ["Cleaning up orphan processes"] * 25
+    )
+
+    assert "real failure here" in extract(log, budget)
+
+
+def test_signal_score_ranks_a_loud_log_above_a_quiet_one() -> None:
+    loud = "\n".join(["##[error] boom"] * 3 + ["Traceback (most recent call last)"])
+
+    assert signal_score(loud) > signal_score("all good\nnothing to see")

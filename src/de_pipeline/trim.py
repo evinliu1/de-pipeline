@@ -13,6 +13,8 @@ NOISE_PATTERNS = [
         r"^##\[endgroup\]",
         r"^remote: (Counting|Compressing|Enumerating|Total)",
         r"^(Receiving|Resolving|Unpacking) (objects|deltas):",
+        r"^\[INFO\] (Downloading|Downloaded|Progress) ",
+        r"^Progress \(\d+\):",
     )
 ]
 FALSE_POSITIVES = re.compile(
@@ -23,6 +25,15 @@ FALSE_POSITIVES = re.compile(
 )
 SIGNALS = [
     (re.compile(r"^##\[error\]"), 5),
+    (re.compile(r"\b(OOMKilled|out of memory|no space left on device)\b", re.IGNORECASE), 5),
+    (re.compile(r"\bexit (code|status) 137\b"), 5),
+    (re.compile(r"^\[ERROR\]"), 4),
+    (re.compile(r"\b(BUILD FAILURE|Failed to execute goal)\b"), 4),
+    (re.compile(r"\bError: (UPGRADE|INSTALLATION|UNINSTALL) FAILED\b"), 4),
+    (re.compile(r"\b(manifest unknown|unauthorized: authentication required|denied: requested access)\b"), 4),
+    (re.compile(r"\b(ImagePullBackOff|CrashLoopBackOff|ErrImagePull)\b"), 4),
+    (re.compile(r"\b(Cannot connect to the Docker daemon|connection refused)\b", re.IGNORECASE), 3),
+    (re.compile(r"^\S+:\d+:\d+: [EWFC]\d+ "), 3),
     (re.compile(r"Traceback \(most recent call last\)"), 4),
     (re.compile(r"^E\s+\S"), 4),
     (re.compile(r"^(FAILED|ERROR)\s+\S"), 4),
@@ -66,6 +77,9 @@ SIGNALS = [
 BEFORE = 5
 AFTER = 10
 TAIL = 20
+SEPARATOR_CHARS = 30
+MIN_WINDOW_LINES = 3
+SIGNAL_SAMPLE = 10
 
 
 @dataclass
@@ -73,6 +87,11 @@ class Window:
     start: int
     end: int
     score: float
+    anchor: int | None = None
+
+    def __post_init__(self) -> None:
+        if self.anchor is None:
+            self.anchor = self.start
 
 
 def strip_timestamps(text: str) -> str:
@@ -107,6 +126,11 @@ def score_line(text: str) -> int:
     return highest
 
 
+def signal_score(raw: str) -> int:
+    scores = sorted((score_line(line) for line in clean_lines(raw)), reverse=True)
+    return sum(scores[:SIGNAL_SAMPLE])
+
+
 def extract(raw: str, max_chars: int) -> str:
     lines = clean_lines(raw)
     if not lines:
@@ -117,35 +141,65 @@ def extract(raw: str, max_chars: int) -> str:
     return render_windows(lines, windows)
 
 
-def fit_budget(lines: list[str], windows: list[Window], max_chars: int) -> list[Window]:
-    budgeted_windows = []
-    total_chars = 0
-    windows = sorted(windows, key=lambda window: window.score, reverse=True)
-    for window in windows:
-        start = window.start
-        size = sum(1 + len(line) for line in lines[window.start : window.end])
-        while size > max_chars:
+def measure(lines: list[str], start: int, end: int) -> int:
+    return sum(1 + len(lines[index]) for index in range(start, end))
+
+
+def shrink(lines: list[str], window: Window, max_chars: int) -> Window | None:
+    """Trims a window inward toward its anchor until it fits.
+
+    The anchor is the line that earned the window its score, so it is the last
+    line to go. A signal window carries its anchor five lines in; the tail
+    window carries it on the final line. Trimming from a fixed side would throw
+    away the decisive line of one or the other.
+    """
+    start, end = window.start, window.end
+    anchor = min(max(window.anchor or 0, start), end - 1)
+    size = measure(lines, start, end)
+    while size > max_chars and end - start > 1:
+        if end - 1 > anchor:
+            end -= 1
+            size -= len(lines[end]) + 1
+        elif start < anchor:
             size -= len(lines[start]) + 1
             start += 1
-        if total_chars + size <= max_chars:
-            budgeted_windows.append(Window(start, window.end, window.score))
-            total_chars += size
+        else:
+            break
+    if size > max_chars:
+        return None
+    return Window(start, end, window.score, anchor)
+
+
+def fit_budget(lines: list[str], windows: list[Window], max_chars: int) -> list[Window]:
+    budgeted_windows: list[Window] = []
+    total_chars = 0
+    for window in sorted(windows, key=lambda window: window.score, reverse=True):
+        separator = SEPARATOR_CHARS if budgeted_windows else 0
+        fitted = shrink(lines, window, max_chars - total_chars - separator)
+        if fitted is None:
+            continue
+        was_trimmed = fitted.end - fitted.start < window.end - window.start
+        if was_trimmed and budgeted_windows and fitted.end - fitted.start < MIN_WINDOW_LINES:
+            continue
+        budgeted_windows.append(fitted)
+        total_chars += separator + measure(lines, fitted.start, fitted.end)
 
     return sorted(budgeted_windows, key=lambda window: window.start)
 
 
 def merge(windows: list[Window]) -> list[Window]:
-    windows = sorted(windows, key=lambda window: window.start)
-    merged = []
-    for window in windows:
-        start = window.start
-        end = window.end
-        score = window.score
-        if merged and start <= merged[-1].end:
-            merged[-1].end = max(merged[-1].end, end)
-            merged[-1].score = score + merged[-1].score
+    merged: list[Window] = []
+    strongest: list[float] = []
+    for window in sorted(windows, key=lambda window: window.start):
+        if merged and window.start <= merged[-1].end:
+            if window.score > strongest[-1]:
+                merged[-1].anchor = window.anchor
+                strongest[-1] = window.score
+            merged[-1].end = max(merged[-1].end, window.end)
+            merged[-1].score = window.score + merged[-1].score
         else:
-            merged.append(Window(start, end, score))
+            merged.append(Window(window.start, window.end, window.score, window.anchor))
+            strongest.append(window.score)
     return merged
 
 
@@ -167,11 +221,11 @@ def render_windows(lines: list[str], windows: list[Window]) -> str:
 def build_windows(scores: list[int]) -> list[Window]:
     total = len(scores)
     windows = [
-        Window(max(0, i - BEFORE), min(total, i + AFTER + 1), float(score))
+        Window(max(0, i - BEFORE), min(total, i + AFTER + 1), float(score), i)
         for i, score in enumerate(scores)
         if score
     ]
-    windows.append(Window(max(0, total - TAIL), total, 1.0))
+    windows.append(Window(max(0, total - TAIL), total, 1.0, max(0, total - 1)))
     return windows
 
 
