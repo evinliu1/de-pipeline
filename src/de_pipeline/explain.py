@@ -10,6 +10,7 @@ import httpx
 import pydantic
 from dotenv import load_dotenv
 from collections.abc import Iterable
+from dataclasses import replace
 
 from de_pipeline.config import GEMINI_URL, MAX_DIFF_CHARS, MAX_LOG_CHARS, get_env
 from de_pipeline.retry import request_with_retry
@@ -113,6 +114,55 @@ def wrap_log(text: str) -> str:
 
 def neutralize(text: str) -> str:
     return CLOSING_TAG.sub(r"<\\/\1", text)
+
+
+def scrub(diagnosis: Diagnosis, secrets: Iterable[str]) -> Diagnosis:
+    """Re-redacts the model's own words before they are rendered or posted.
+
+    The model quotes log lines back as evidence, so anything redaction missed on
+    the way out would otherwise be republished on the pull request.
+    """
+    secrets = list(secrets)
+    data = diagnosis.model_dump()
+    data["summary"] = redact(data["summary"], secrets)
+    data["root_cause"] = redact(data["root_cause"], secrets)
+    data["fix_steps"] = [redact(s, secrets) for s in data["fix_steps"]]
+    data["evidence"] = [
+        {"excerpt": redact(e["excerpt"], secrets), "explanation": redact(e["explanation"], secrets)}
+        for e in data["evidence"]
+    ]
+    return Diagnosis.model_validate(data)
+
+
+def redact_optional(value: str | None, secrets: list[str]) -> str | None:
+    return redact(value, secrets) if value else value
+
+
+def scrub_failure(failure: RunFailure, secrets: Iterable[str]) -> RunFailure:
+    """Redacts the metadata every output renders, not only the model prompt.
+
+    A secret rides in on a branch name, a job name, or a run URL just as easily
+    as in a log, and those fields reach the pull request comment too. Cleaning
+    them once here means a new output cannot leak one by forgetting to redact.
+    """
+    secrets = list(secrets)
+    return replace(
+        failure,
+        repo=redact_optional(failure.repo, secrets),
+        workflow=redact_optional(failure.workflow, secrets),
+        branch=redact_optional(failure.branch, secrets),
+        url=redact_optional(failure.url, secrets),
+        diff_source=redact_optional(failure.diff_source, secrets),
+        jobs=[
+            replace(
+                job,
+                name=redact(job.name, secrets),
+                url=redact_optional(job.url, secrets),
+                failed_steps=[redact(step, secrets) for step in job.failed_steps],
+            )
+            for job in failure.jobs
+        ],
+    )
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -260,8 +310,12 @@ def parse_diagnosis(content: str) -> Diagnosis:
     try:
         return Diagnosis.model_validate(content_json)
     except pydantic.ValidationError as e:
+        problems = "; ".join(
+            f"{'.'.join(str(part) for part in err['loc'])}: {err['type']}"
+            for err in e.errors()
+        )
         raise DiagnosisError(
-            f"The model's JSON did not match the Diagnosis schema: {e}"
+            f"The model's JSON did not match the Diagnosis schema ({problems})"
         ) from e
 
 
@@ -306,11 +360,13 @@ def main(argv: list[str] | None = None) -> None:
     load_dotenv()
     args = parse_args(argv)
     try:
-        failure = load_failure(args)
+        secrets = environment_secrets()
+        failure = scrub_failure(load_failure(args), secrets)
         api_key = get_env("GEMINI_API_KEY")
         model_name = get_env("DE_PIPELINE_MODEL")
-        secrets = environment_secrets()
-        diagnosis = diagnose(api_key, model_name, build_user_message(failure, secrets))
+        diagnosis = scrub(
+            diagnose(api_key, model_name, build_user_message(failure, secrets)), secrets
+        )
     except NoFailuresError as e:
         print(f"nothing to diagnose: {e!s}", file=sys.stderr)
         return
